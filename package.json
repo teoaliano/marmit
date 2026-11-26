@@ -71,7 +71,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsup && cp src/core/styles.css dist/styles.css",
+    "build": "rm -rf dist && tsup && cat src/core/styles.css src/core/parts/num.css src/core/parts/slider.css src/core/parts/fields.css src/core/parts/anchor.css src/core/parts/pad.css src/core/parts/transition.css src/core/parts/gradient.css src/core/parts/color.css > dist/styles.css",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

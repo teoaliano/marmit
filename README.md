@@ -246,7 +246,7 @@ Every dial from the motion study is a `physics` option:
 
 | Dial | Default | |
 |---|---|---|
-| `stiffness`, `damping` | `150`, `10` | the main spring; lower damping overshoots more |
+| `stiffness`, `damping` | `410`, `36.5` | the main spring; lower damping overshoots more |
 | `blur` | `7` | goo melt radius; `0` turns the goo off |
 | `stretch` | `0` | how far the material can stretch |
 | `dent`, `dentWidth` | `2.5`, `16` | how deep and wide a press dents the bar |
@@ -254,7 +254,7 @@ Every dial from the motion study is a `physics` option:
 | `reach`, `pullBend` | `32`, `0.4` | taffy pull: how far it gives, how much the middle bows |
 | `arc`, `corner`, `lift` | `0.25`, `40`, `0.15` | re-dock routes: the arc between sides, slide radius round a corner, swing bow |
 | `dropletGap`, `string` | `14`, `12` | search: the close droplet's gap, and its neck thickness (`0` floats free) |
-| `panelGap`, `neck` | `10`, `26` | the panel's gap to the bar, and the neck's thickness |
+| `panelGap`, `neck` | `14`, `26` | the panel's gap to the bar (at least 2 × `blur`), and the neck's thickness |
 
 There is one shared `requestAnimationFrame` loop for every island, and it runs only while something moves. The goo filter only switches on while something is melting, sized to just that area. With `prefers-reduced-motion`, every spring snaps to its target.
 

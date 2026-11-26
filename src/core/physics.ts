@@ -84,8 +84,9 @@ export class Stick {
       return Math.abs(t.x - x) < .1 && Math.abs(t.y - y) < .1 && Math.abs(t.vx) + Math.abs(t.vy) < 2;
     });
   }
-  /** lay the points along the bent rod; give is how far an arm may stretch (0 keeps its length) */
-  shape(give: number, walls: Walls) {
+  /** lay the points along the bent rod; give is how far an arm may stretch (0 keeps its length). bow pushes the rod
+      sideways by that much at `at` (-1..1 along it) while its ends hold, the way a rod gives when pulled at one spot */
+  shape(give: number, walls: Walls, bow = 0, at = 0) {
     const c = Math.cos(this.th), s = Math.sin(this.th), m = (this.n - 1) / 2, L = Math.max(this.half, 1e-3), vmax = L * .8;
     const arms = this.tips.map(t => {
       const dx = t.x - this.cx, dy = t.y - this.cy;
@@ -94,7 +95,9 @@ export class Stick {
       return [Math.max(len * .5, len - v * v * BEAM_LEN / len), v] as const;
     });
     this.ns.forEach((p, i) => {
-      const a = (i - m) / m, x = Math.abs(a), [u, v] = arms[a < 0 ? 0 : 1], along = Math.sign(a) * x * u, side = v * BEAM(x);
+      const a = (i - m) / m, x = Math.abs(a), [u, v] = arms[a < 0 ? 0 : 1], along = Math.sign(a) * x * u;
+      // the bow keeps the rod's own curve, squeezed toward the near end and stretched toward the far one so it peaks at `at`
+      const side = v * BEAM(x) + (bow && bow * (1 - BEAM(Math.min(1, a < at ? (at - a) / (1 + at) : (a - at) / (1 - at)))));
       p.x = clamp(this.cx + along * c - side * s, walls[0], walls[2]);
       p.y = clamp(this.cy + along * s + side * c, walls[1], walls[3]);
     });

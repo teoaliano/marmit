@@ -22,12 +22,15 @@
 }
 .mm[data-mode=contained] { position: absolute; z-index: var(--mm-z, 10); }
 .mm[data-mode=inline] { position: relative; inset: auto; display: inline-block; vertical-align: middle; z-index: var(--mm-z, auto); flex: none; }
+/* while a panel is out (and until it has finished closing) the island sits above its neighbours */
+.mm[data-mode=inline].mm-raised, .mm[data-mode=contained].mm-raised { z-index: calc(var(--mm-z, 10) + 1000); }
 .mm, .mm *, .mm *::before, .mm *::after { box-sizing: border-box; }
 .mm button, .mm input { font: inherit; color: inherit; margin: 0; letter-spacing: inherit; }
 .mm button { -webkit-appearance: none; appearance: none; }
 .mm svg { display: block; overflow: visible; }
 .mm :focus { outline: none; }
 .mm :focus-visible { outline: 1.5px solid var(--mm-muted); outline-offset: 2px; }
+.mm input:focus-visible { outline: none; } /* text inputs show focus via caret / container tint */
 
 /* ---------- layers ---------- */
 .mm-goo { position: absolute; left: 0; top: 0; pointer-events: none; display: none; }
@@ -97,6 +100,9 @@ html.mm-grabbing, html.mm-grabbing * { cursor: grabbing !important; user-select:
 .mm-slider .mm-fill { left: 0; background: var(--mm-accent); }
 .mm-slider .mm-knob { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--mm-accent); transition: transform .15s ease-out; }
 .mm-slider:hover .mm-knob, .mm-slider.drag .mm-knob, .mm-slider:focus-visible .mm-knob { transform: scale(1.25); }
+/* a slider needs no ring around it: keyboard focus shows on the knob (it grows) and the label (it lights up) */
+.mm .mm-slider:focus-visible { outline: none; }
+.mm-labeled:has(.mm-slider:focus-visible) > .mm-label { color: var(--mm-ink); }
 
 .mm-stepper { display: flex; align-items: center; height: 32px; border-radius: 999px; background: var(--mm-tint); }
 .mm-stepper button { width: 32px; height: 32px; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 50%; display: grid; place-items: center; opacity: .75;
@@ -126,7 +132,7 @@ html.mm-grabbing, html.mm-grabbing * { cursor: grabbing !important; user-select:
 .mm-search input { padding-right: 12px; opacity: 0; transition: opacity .12s ease-out; }
 .mm-search.open input { opacity: 1; transition: opacity .25s ease-out .1s; }
 .mm-close { opacity: 0; pointer-events: none; }
-.mm-close.on { pointer-events: auto; }
+.mm-close.shown { pointer-events: auto; }
 
 .mm-status { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 8px 0 6px; }
 .mm-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--mm-success)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--tone, var(--mm-success)) 25%, transparent); }
@@ -183,7 +189,7 @@ html.mm-grabbing, html.mm-grabbing * { cursor: grabbing !important; user-select:
 .mm-custom { display: block; }
 
 /* ---------- tooltip, collapse tab ---------- */
-.mm-tip { position: absolute; left: 0; top: 0; padding: 5px 8px; border-radius: 7px; background: var(--mm-bar); color: var(--mm-ink); font-size: 11px; white-space: nowrap;
+.mm-tip { position: absolute; left: 0; top: 0; padding: 5px 8px; border-radius: 7px; background: var(--mm-bar); color: var(--mm-ink); font-size: 11px; line-height: 1.4; width: max-content; max-width: 240px; white-space: normal;
   box-shadow: 0 4px 14px var(--mm-shadow); pointer-events: none; opacity: 0; transition: opacity .15s ease-out; }
 .mm-tip.on { opacity: 1; }
 .mm-tab { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: 46px; height: 16px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; pointer-events: auto; opacity: 0;
@@ -199,3 +205,55 @@ html.mm-grabbing, html.mm-grabbing * { cursor: grabbing !important; user-select:
 @media (prefers-reduced-motion: reduce) {
   .mm *, .mm *::before, .mm *::after { transition: none !important; animation: none !important; }
 }
+
+/* panel heading actions: detach, and in a detached window minimise / dock back / close */
+.mm-pacts { display: flex; gap: 2px; margin: -4px -4px -4px 0; }
+/* the heading's own right-hand content (a value readout, copy/paste) stays right, next to the window buttons */
+.mm-ph:has(.mm-pacts) > :nth-child(2) { margin-left: auto; }
+.mm-pact { width: 22px; height: 22px; border: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; background: none; color: var(--mm-muted); cursor: pointer;
+  transition: background .15s ease-out, color .15s ease-out; }
+.mm-pact:hover { background: var(--mm-tint); color: var(--mm-ink); }
+.mm-pact .mm-ic { width: 12px; height: 12px; }
+.mm-pact.fl { display: none; }
+.mm-ph:has(.mm-pacts) { align-items: center; }
+/* detached windows: a layer above every island; each window is a panel that floats on its own */
+.mm.mm-floats { z-index: calc(var(--mm-z, 2147483000) + 1); }
+.mm-win { position: absolute; left: 0; top: 0; pointer-events: auto; background: var(--mm-bar); border-radius: 18px;
+  box-shadow: 0 14px 36px var(--mm-shadow); }
+/* detaching: it is already where the panel was, fully drawn; it lifts off (up a little, a touch bigger, a deeper
+   shadow) and settles, so it reads as the same panel picked up rather than a new one fading in */
+.mm-win.lift { animation: mm-lift .42s var(--mm-ease); }
+@keyframes mm-lift {
+  35% { translate: 0 -6px; scale: 1.02; box-shadow: 0 22px 48px var(--mm-shadow), 0 0 0 0 transparent; }
+}
+.mm-win.flash { animation: mm-flash .35s var(--mm-ease); }
+@keyframes mm-flash { 40% { scale: 1.03; } }
+.mm-win .mm-pc { position: relative; left: auto; top: auto; translate: none; opacity: 1; filter: none; visibility: visible; transition: none; }
+.mm-win .mm-pact.dk { display: none; }
+.mm-win .mm-pact.fl { display: grid; }
+.mm-win .mm-ph { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
+.mm-win.dragging, .mm-win.dragging .mm-ph { cursor: grabbing; transition: opacity .18s ease-out; }
+.mm-win.min .mm-pc :not(.mm-ph, .mm-ph *, :has(.mm-ph)) { display: none; }
+.mm-win.min .mm-ph { padding-bottom: 2px; }
+/* a trigger whose panel floats in its own window keeps the open look: its menu is still out, just elsewhere */
+.mm-btn.mm-detached, .mm-pill.mm-detached { background: var(--mm-tint-2); opacity: 1; }
+
+/* blob heading: the title and the buttons are pills centred on the panel's top edge, half outside it, melted into the
+   body by a tight goo drawn behind the content (.mm-pc-bg). The panel box itself is then transparent. */
+.mm-pc { isolation: isolate; }
+.mm-pc.mm-pc-blob { padding-top: 0; }
+.mm-pc-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; filter: var(--mm-head-goo); }
+.mm-pc-bg > i { position: absolute; background: var(--mm-bar); border-radius: 999px; }
+.mm-pc-bg > .b { left: 0; right: 0; bottom: 0; border-radius: 18px; }
+.mm-ph.blobbed { height: 28px; padding: 0; margin: 0 -6px 8px; align-items: center; gap: 8px; }
+.mm-ph-t { height: 28px; display: inline-flex; align-items: center; padding: 0 12px; white-space: nowrap; }
+.mm-ph-r { height: 28px; display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 0 3px 0 10px; }
+.mm-ph-r:has(> .mm-pacts:only-child) { padding: 0 3px; }
+.mm-ph.blobbed .mm-pacts { margin: 0; }
+.mm-ph.blobbed > :nth-child(2) { margin-left: auto; }
+.mm-panel:has(> .mm-pc-blob.on) { background: transparent; border-radius: 0 !important; }
+.mm-win:has(> .mm-pc-blob) { background: transparent; box-shadow: none; }
+.mm-win > .mm-pc-blob > .mm-pc-bg { filter: var(--mm-head-goo) drop-shadow(0 14px 30px var(--mm-shadow)) !important; }
+.mm-win.min .mm-pc-blob > .mm-pc-bg { display: block; }
+.mm-win.min .mm-pc-blob > .mm-pc-bg > .b { display: none; }
+.mm-win.min .mm-pc-blob > .mm-pc-bg > i:not(.b) { display: block; }

@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slider directions</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    --bg: #2a2d33; --page-ink: #fff; --page-muted: rgb(255 255 255 / .55); --page-line: rgb(255 255 255 / .08); --card: rgb(255 255 255 / .035);
+    --mm-bar: #000; --mm-ink: #fff; --mm-on-accent: #000; --mm-shadow: rgb(0 0 0 / .22);
+  }
+  body[data-theme=light] {
+    color-scheme: light;
+    --bg: #e4e5e9; --page-ink: #111114; --page-muted: rgb(17 17 20 / .55); --page-line: rgb(17 17 20 / .09); --card: rgb(255 255 255 / .45);
+    --mm-bar: #fff; --mm-ink: #111114; --mm-on-accent: #fff; --mm-shadow: rgb(20 20 30 / .16);
+  }
+  body {
+    --mm-font: 500 13px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", "Segoe UI", sans-serif;
+    --mm-tint: color-mix(in oklch, var(--mm-ink) 11%, transparent);
+    --mm-tint-2: color-mix(in oklch, var(--mm-ink) 22%, transparent);
+    --mm-line: color-mix(in oklch, var(--mm-ink) 14%, transparent);
+    --mm-track: color-mix(in oklch, var(--mm-ink) 22%, transparent);
+    --mm-muted: color-mix(in oklch, var(--mm-ink) 60%, transparent);
+    --mm-ease: cubic-bezier(.32, .72, 0, 1);
+    margin: 0; background: var(--bg); color: var(--page-ink);
+    font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    transition: background .25s ease-out, color .25s ease-out;
+  }
+  a { color: inherit; }
+  header { max-width: 1040px; margin: 0 auto; padding: 48px 20px 8px; display: flex; gap: 16px; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--page-muted); max-width: 620px; }
+  main { max-width: 1040px; margin: 0 auto; padding: 16px 20px 160px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* theme toggle, styled like .mm-seg */
+  .theme { position: relative; display: flex; height: 32px; padding: 0; border-radius: 999px; background: var(--mm-bar); box-shadow: 0 6px 14px var(--mm-shadow); font: var(--mm-font); }
+  .theme button { position: relative; z-index: 1; border: 0; background: none; padding: 0 14px; cursor: pointer; color: var(--mm-muted); font: inherit; border-radius: 999px; }
+  .theme button[aria-checked=true] { color: var(--mm-on-accent); }
+  .theme i { position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 999px; background: var(--mm-ink); transition: transform .35s var(--mm-ease), width .35s var(--mm-ease); }
+  .theme { padding: 0 4px; height: 40px; align-items: center; }
+  .theme button { height: 32px; }
+
+  .card { border-top: 1px solid var(--page-line); padding-top: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .stage { border-radius: 16px; background: var(--card); padding: 60px 20px 28px; display: flex; flex-direction: column; align-items: center; gap: 22px; min-width: 0; overflow: hidden; }
+  .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 small { font: 11px/1 ui-monospace, Menlo, monospace; color: var(--page-muted); }
+  .card .idea { margin: 0 0 10px; }
+  .card dl { margin: 0; display: grid; grid-template-columns: 74px 1fr; gap: 5px 10px; font-size: 12px; }
+  .card dt { color: var(--page-muted); }
+  .card dd { margin: 0; }
+  .card dd a { color: var(--page-muted); text-decoration-color: var(--page-line); }
+  .card dd a:hover { color: var(--page-ink); }
+  .readout { font: 11px/1.4 ui-monospace, Menlo, monospace; color: var(--page-muted); }
+  @media (max-width: 860px) { .card { grid-template-columns: 1fr; } }
+
+  /* ---------- marmit-looking containers ---------- */
+  .bar { display: inline-flex; align-items: center; gap: 4px; height: 40px; padding: 0 4px; border-radius: 999px; background: var(--mm-bar); color: var(--mm-ink);
+    font: var(--mm-font); box-shadow: 0 8px 14px var(--mm-shadow); position: relative; max-width: 100%; }
+  .sep { width: 1.5px; height: 20px; background: var(--mm-line); border-radius: 1px; flex: none; }
+  .ib { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; opacity: .75; flex: none; }
+  .ib svg { width: 16px; height: 16px; }
+  .panel { width: 268px; padding: 8px; border-radius: 20px; background: var(--mm-bar); color: var(--mm-ink); font: var(--mm-font); box-shadow: 0 8px 14px var(--mm-shadow);
+    display: flex; flex-direction: column; gap: 4px; position: relative; }
+  .panel .ph { display: flex; justify-content: space-between; font-size: 11px; color: var(--mm-muted); padding: 4px 6px 6px; }
+  .panel .sl { width: 100% !important; }
+
+  /* ---------- shared slider pieces ---------- */
+  .sl { position: relative; height: 32px; display: flex; align-items: center; gap: 8px; flex: none; outline: none; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; border-radius: 999px; }
+  /* no ring around the row: keyboard focus shows inside the slider (the label lights up) */
+  .sl:focus-visible { outline: none; }
+  .sl .lb { color: var(--mm-muted); padding-left: 6px; white-space: nowrap; flex: none; transition: color .2s ease-out; }
+  .sl:hover .lb, .sl.drag .lb, .sl:focus-visible .lb { color: var(--mm-ink); }
+  .sl .v { font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; min-width: 36px; text-align: right; padding-right: 6px; cursor: text; }
+  .sl .vu { color: var(--mm-muted); }
+  .sl .edit { position: absolute; z-index: 5; box-sizing: border-box; border: 0; outline: none; margin: 0; padding: 0 8px; border-radius: 999px; font: inherit;
+    font-variant-numeric: tabular-nums; text-align: right; color: var(--mm-ink); background: var(--mm-bar); box-shadow: inset 0 0 0 1.5px var(--mm-track); }
+
+  /* 01 fill pill */
+  .d-fill .fp { position: absolute; inset: 0; border-radius: 999px; background: var(--mm-tint); overflow: hidden; will-change: transform; }
+  .d-fill .fp-fill { position: absolute; inset: 0; background: var(--mm-ink); opacity: .9; }
+  .d-fill:hover .fp-fill, .d-fill.drag .fp-fill { opacity: 1; }
+  .d-fill .fp-tx { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; pointer-events: none; }
+  .d-fill .fp-tx .lb { padding: 0; }
+  .d-fill .fp-tx .v { padding: 0; }
+  .d-fill .fp-on { color: var(--mm-on-accent); }
+  .d-fill .fp-on .lb, .d-fill .fp-on .vu { color: color-mix(in oklch, var(--mm-on-accent) 72%, transparent); }
+  .d-fill .fp-mk { position: absolute; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--mm-ink); opacity: .28; }
+  .d-fill .fp-mk.zero { width: 1.5px; height: 12px; margin: -6px 0 0 -.75px; border-radius: 1px; }
+  .d-fill { cursor: ew-resize; }
+
+  /* 02 scrubber */
+  .d-scrub { cursor: ew-resize; }
+  .d-scrub .sc { position: absolute; inset: 0; border-radius: 999px; background: var(--mm-tint); display: flex; align-items: center; justify-content: space-between; padding: 0 12px; transition: background .2s ease-out; }
+  .d-scrub:hover .sc { background: var(--mm-tint-2); }
+  .d-scrub.drag .sc { background: var(--mm-tint-2); }
+  .d-scrub .sc .lb, .d-scrub .sc .v { padding: 0; }
+  .d-scrub .sc .v { cursor: ew-resize; }
+  .d-scrub .sc-tr { position: absolute; left: 14px; right: 14px; bottom: 5px; height: 2px; border-radius: 2px; background: var(--mm-tint); transition: height .2s var(--mm-ease); }
+  .d-scrub:hover .sc-tr, .d-scrub.drag .sc-tr { height: 3px; }
+  .d-scrub .sc-fi { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: var(--mm-ink); opacity: .7; }
+  .d-scrub .sc-dots { position: absolute; left: 0; right: 0; bottom: 5px; display: flex; justify-content: center; gap: 4px; }
+  .d-scrub .sc-dots b { width: 4px; height: 4px; border-radius: 50%; background: var(--mm-ink); opacity: .2; transition: opacity .2s ease-out, transform .3s var(--mm-ease); }
+  .d-scrub .sc-dots b.on { opacity: .85; }
+  .d-scrub .sc-dots b.cur { transform: scale(1.35); }
+  .d-scrub .chev { position: absolute; top: 50%; width: 8px; height: 8px; margin-top: -4px; opacity: 0; transition: opacity .2s ease-out, transform .3s var(--mm-ease); color: var(--mm-muted); }
+  .d-scrub .chev.l { left: 3px; transform: translateX(3px); }
+  .d-scrub .chev.r { right: 3px; transform: translateX(-3px); }
+  .d-scrub:hover .chev, .d-scrub.drag .chev { opacity: 1; transform: none; }
+
+  /* 03 ruler */
+  .d-ruler { cursor: ew-resize; }
+  .d-ruler .rl { position: relative; flex: 1; height: 32px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent); mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent); }
+  .d-ruler .rs { position: absolute; left: 0; top: 0; height: 32px; will-change: transform; }
+  .d-ruler .rs i { position: absolute; bottom: 9px; width: 1.5px; margin-left: -.75px; height: 6px; border-radius: 1px; background: var(--mm-ink); opacity: .28; }
+  .d-ruler .rs i.mj { height: 11px; }
+  .d-ruler .rs i.z { height: 14px; }
+  .d-ruler .rs i.on { opacity: .9; }
+  .d-ruler .rn { position: absolute; left: 50%; top: 5px; width: 2px; height: 20px; margin-left: -1px; border-radius: 2px; background: var(--mm-ink); transition: transform .25s var(--mm-ease); }
+  .d-ruler .rn::after { content: ""; position: absolute; left: -2px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--mm-ink); }
+  .d-ruler.drag .rn { transform: scaleY(1.12); }
+
+  /* 04 segments */
+  .d-seg .sg { position: relative; flex: 1; height: 32px; display: flex; align-items: center; gap: 2px; }
+  .d-seg .sg i { position: relative; flex: 1; height: 14px; border-radius: 2px; background: var(--mm-tint-2); overflow: hidden; will-change: transform; }
+  .d-seg .sg.few i { height: 16px; border-radius: 5px; gap: 3px; }
+  .d-seg .sg.few { gap: 3px; }
+  .d-seg .sg i b { position: absolute; top: 0; bottom: 0; background: var(--mm-ink); }
+
+  /* 05 goo knob */
+  .d-goo svg { flex: 1 1 0; min-width: 0; width: 0; height: 32px; overflow: visible; display: block; }
+  .d-goo .trk { fill: var(--mm-track); }
+  .d-goo .ink { fill: var(--mm-ink); }
+  .d-goo .dent { fill: var(--mm-bar); }
+  .d-goo .tk { fill: var(--mm-ink); opacity: .35; }
+
+  /* 06 elastic */
+  .d-elastic .et { position: relative; flex: 1; height: 32px; }
+  .d-elastic .etr { position: absolute; left: 0; right: 0; top: 50%; height: 4px; border-radius: 999px; background: var(--mm-tint-2); overflow: hidden; will-change: transform; }
+  .d-elastic .efi { position: absolute; top: 0; bottom: 0; background: var(--mm-ink); }
+
+  /* 07 value thumb */
+  .d-thumb .tt { position: relative; flex: 1; height: 32px; }
+  .d-thumb .ttr { position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; border-radius: 4px; background: var(--mm-tint-2); }
+  .d-thumb .tfi { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--mm-ink); opacity: .45; }
+  .d-thumb .tdt { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: var(--mm-ink); opacity: .45; }
+  .d-thumb .tth { position: absolute; left: 0; top: 5px; height: 22px; border-radius: 999px; background: var(--mm-ink); color: var(--mm-on-accent);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 0 3px var(--mm-bar); will-change: transform; cursor: grab; }
+  .d-thumb.drag .tth { cursor: grabbing; }
+  .d-thumb .tth .v { min-width: 0; padding: 0 9px; text-align: center; cursor: inherit; }
+  .d-thumb .tth .vu { color: color-mix(in oklch, var(--mm-on-accent) 55%, transparent); }
+
+  /* 08 ramp */
+  .d-ramp .rp { position: relative; flex: 1; height: 32px; }
+  .d-ramp .rpl { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; padding-bottom: 7px; box-sizing: border-box; will-change: transform; }
+  .d-ramp .rpl { justify-content: space-between; }
+  .d-ramp .rpl i { flex: 1; max-width: 5px; border-radius: 2px; background: var(--mm-tint-2); }
+  .d-ramp .rpl.lit i { background: var(--mm-ink); }
+  .d-ramp .rpl.few { gap: 3px; }
+  .d-ramp .rpl.few i { max-width: 9px; border-radius: 3px; }
+
+  /* 09 bubble */
+  .d-bubble .bb { position: relative; flex: 1; height: 32px; margin-right: 4px; }
+  .d-bubble .btr { position: absolute; left: 6px; right: 6px; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 3px; background: var(--mm-track); }
+  .d-bubble .bfi { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--mm-ink); }
+  .d-bubble .bkn { position: absolute; left: 0; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--mm-ink); will-change: transform; }
+  .d-bubble .bsv { position: absolute; top: -44px; height: 52px; pointer-events: none; overflow: visible; }
+  .d-bubble .bsv .fill { fill: var(--mm-bar); }
+  .d-bubble .btx { position: absolute; left: 0; top: 0; height: 24px; line-height: 24px; white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; font-size: 12px; }
+  .d-bubble .btx .vu { color: var(--mm-muted); }
+  .d-bubble .bdot { position: absolute; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--mm-bar); opacity: .6; }
+
+  /* 10 dial */
+  .d-dial .dl { width: 28px; height: 28px; flex: none; cursor: ns-resize; transition: transform .3s var(--mm-ease); }
+  .d-dial:hover .dl { transform: scale(1.07); }
+  .d-dial.drag .dl { transform: scale(.92); }
+  .d-dial .dl svg { width: 28px; height: 28px; display: block; overflow: visible; }
+  .d-dial .a0 { fill: none; stroke: var(--mm-tint-2); stroke-width: 2.5; stroke-linecap: round; }
+  .d-dial .a1 { fill: none; stroke: var(--mm-ink); stroke-width: 2.5; stroke-linecap: round; }
+  .d-dial .cap { fill: var(--mm-tint); }
+  .d-dial .ptr { stroke: var(--mm-ink); stroke-width: 2; stroke-linecap: round; }
+  .d-dial .lb { flex: 1; }
+</style>
+</head>
+<body data-theme="dark">
+<header>
+  <div>
+    <h1>marmit slider: 10 directions</h1>
+    <p>Each one is live at real size inside a marmit bar (40px tall, 32px rows) and in a panel. Drag, click, use the arrow keys (Shift for bigger steps, or finer on scrubbers), and click a value or press Enter to type one.</p>
+  </div>
+  <div class="theme" role="radiogroup" aria-label="Theme"><i></i><button role="radio" aria-checked="true" data-t="dark">Dark</button><button role="radio" aria-checked="false" data-t="light">Light</button></div>
+</header>
+<main id="main"></main>
+
+<script>
+(() => {
+  /* ---------------- utils ---------------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, cls, parent, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.append(e); return e; };
+  const sv = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; };
+  const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+  const rubber = (x, d = 26) => Math.sign(x) * (1 - 1 / (Math.abs(x) * 0.55 / d + 1)) * d;
+  const VAL = '<span class="v"><span class="vn"></span><span class="vu"></span></span>';
+  let uid = 0;
+
+  /* critically-ish damped spring on o[k] toward target; returns true while moving */
+  function spr(o, k, target, K, dt, z = .75) {
+    const vk = k + 'V', C = 2 * Math.sqrt(K) * z;
+    let v = o[vk] || 0, x = o[k];
+    const n = dt > .017 ? 2 : 1, h = dt / n;
+    for (let i = 0; i < n; i++) { v += (K * (target - x) - C * v) * h; x += v * h; }
+    o[k] = x; o[vk] = v;
+    if (Math.abs(target - x) < 1e-4 && Math.abs(v) < 1e-3) { o[k] = target; o[vk] = 0; return false; }
+    return true;
+  }
+
+  /* ---------------- animation loop ---------------- */
+  const live = new Set(); let running = false, last = 0;
+  function frame(now) {
+    const dt = Math.min(.034, Math.max(.001, (now - last) / 1000)); last = now;
+    for (const s of [...live]) if (!stepS(s, dt)) live.delete(s);
+    if (live.size) requestAnimationFrame(frame); else running = false;
+  }
+  function wake(s) { live.add(s); if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); } }
+  function stepS(s, dt) {
+    let a = false;
+    const prev = s.d;
+    if (s.drag && !s.few) { s.d = s.t; s.dV = 0; } else a = spr(s, 'd', s.t, 620, dt, .7) || a;
+    s.vel += ((s.d - prev) / dt - s.vel) * .35;
+    if (Math.abs(s.vel) < 1e-3) s.vel = 0; else a = true;
+    if (!s.drag) a = spr(s, 'over', 0, 520, dt, .55) || a;
+    a = spr(s, 'hv', (s.hover || s.drag) ? 1 : 0, 520, dt, .8) || a;
+    a = spr(s, 'pr', s.drag ? 1 : 0, 700, dt, .6) || a;
+    if (s.design.render(s, dt)) a = true;
+    return a || s.drag;
+  }
+
+  /* ---------------- slider engine ---------------- */
+  function slider(design, o, width) {
+    const s = { ...o, design, id: ++uid };
+    s.range = o.max - o.min; s.n = Math.round(s.range / o.step); s.few = s.n <= 10;
+    s.bip = o.min < 0 && o.max > 0; s.z = s.bip ? -o.min / s.range : 0;
+    s.dec = o.step < 1 ? Math.ceil(-Math.log10(o.step) - 1e-9) : 0;
+    s.t = s.d = (o.value - o.min) / s.range; s.v = o.value; s.over = 0; s.hv = 0; s.pr = 0; s.vel = 0; s.kbd = 0; s.px = -1;
+    s.fmt = v => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(s.dec).replace('-', '−');
+    s.unitTxt = !o.unit ? '' : o.unit.length > 1 ? ' ' + o.unit : o.unit;
+    const r = s.root = el('div', 'sl ' + design.cls);
+    if (width) r.style.width = width + 'px';
+    r.tabIndex = 0; r.setAttribute('role', 'slider'); r.setAttribute('aria-label', o.label);
+    r.setAttribute('aria-valuemin', o.min); r.setAttribute('aria-valuemax', o.max);
+    design.build(s, r);
+    if (!s.vEl) s.vEl = r.querySelector('.v');
+    for (const u of r.querySelectorAll('.vu')) u.textContent = s.unitTxt;
+    setText(s);
+    bind(s);
+    requestAnimationFrame(() => wake(s));
+    return r;
+  }
+  const snapV = (s, x) => { const v = clamp(Math.round((x - s.min) / s.step) * s.step + s.min, s.min, s.max); return +v.toFixed(s.dec); };
+  function setText(s) {
+    const t = s.fmt(s.v);
+    for (const n of s.root.querySelectorAll('.vn')) n.textContent = t;
+    s.root.setAttribute('aria-valuenow', s.v); s.root.setAttribute('aria-valuetext', t + s.unitTxt);
+    s.design.onValue?.(s);
+    s.onChange?.(s);
+  }
+  function setV(s, v, snapDisplay = true) {
+    v = snapV(s, v);
+    if (snapDisplay) s.t = (v - s.min) / s.range;
+    if (v !== s.v) { s.v = v; setText(s); }
+    wake(s);
+  }
+  function hitEl(s) { return s.design.hit ? s.root.querySelector(s.design.hit) : s.root; }
+  function inset(s) { const i = s.design.inset; return typeof i === 'function' ? i(s) : (i || 0); }
+  function applyRaw(s, raw, pxScale) {
+    const ex = raw < 0 ? raw : raw > 1 ? raw - 1 : 0;
+    s.over = rubber(ex * pxScale);
+    const tc = clamp(raw, 0, 1), v = snapV(s, s.min + tc * s.range);
+    s.t = s.few ? (v - s.min) / s.range : tc;
+    if (v !== s.v) { s.v = v; setText(s); }
+    wake(s);
+  }
+
+  function bind(s) {
+    const r = s.root, D = s.design;
+    let rect, ins, lastX, lastY, raw, sens, offset = 0;
+    const ptrT = e => (e.clientX - rect.left - ins) / (rect.width - 2 * ins);
+    r.addEventListener('pointerenter', () => { s.hover = true; wake(s); });
+    r.addEventListener('pointerleave', () => { s.hover = false; s.px = -1; wake(s); });
+    r.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || s.editing) return;
+      if (e.target.closest('.edit')) return;
+      const hit = hitEl(s);
+      if (s.vEl && !hit.contains(s.vEl) && s.vEl.contains(e.target)) { e.preventDefault(); edit(s); return; }
+      e.preventDefault(); r.focus({ preventScroll: true });
+      rect = hit.getBoundingClientRect(); ins = inset(s);
+      s.sx = lastX = e.clientX; s.sy = lastY = e.clientY; s.moved = false; s.downT = performance.now();
+      raw = s.t; offset = 0;
+      if (D.mode === 'abs') {
+        const pt = ptrT(e);
+        if (D.grab && e.target.closest(D.grab)) offset = pt - s.t;
+        else applyRaw(s, pt, rect.width - 2 * ins);
+      } else sens = D.sens(s);
+      s.drag = true; r.classList.add('drag');
+      r.setPointerCapture(e.pointerId);
+      wake(s);
+    });
+    r.addEventListener('pointermove', e => {
+      if (!rect || !s.drag) { const hr = hitEl(s).getBoundingClientRect(), hi = inset(s); s.px = (e.clientX - hr.left - hi) / (hr.width - 2 * hi); if (s.hover) wake(s); }
+      if (!s.drag) return;
+      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) > 3) s.moved = true;
+      if (D.mode === 'abs') {
+        s.px = ptrT(e);
+        applyRaw(s, ptrT(e) - offset, rect.width - 2 * ins);
+      } else {
+        const dx = e.clientX - lastX, dy = e.clientY - lastY;
+        const delta = D.vertical ? dx - dy : dx;
+        raw += delta * sens * (e.shiftKey ? .1 : 1);
+        applyRaw(s, raw, 1 / Math.abs(sens));
+      }
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    const end = e => {
+      if (!s.drag) return;
+      s.drag = false; r.classList.remove('drag');
+      s.t = (s.v - s.min) / s.range;
+      const tap = !s.moved && performance.now() - s.downT < 400;
+      if (tap && s.vEl) {
+        const b = s.vEl.getBoundingClientRect();
+        if (e.clientX >= b.left - 4 && e.clientX <= b.right + 4 && e.clientY >= b.top - 6 && e.clientY <= b.bottom + 6 && D.mode !== 'abs') edit(s);
+        else if (tap && D.grab && e.target.closest(D.grab)) edit(s);
+      }
+      rect = null; wake(s);
+    };
+    r.addEventListener('pointerup', end);
+    r.addEventListener('pointercancel', end);
+    r.addEventListener('keydown', e => {
+      if (s.editing) return;
+      const big = s.few ? 1 : Math.max(1, Math.round(s.n / 10));
+      const st = s.step * (e.shiftKey ? big : 1);
+      let v = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') v = s.v + st;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') v = s.v - st;
+      else if (e.key === 'PageUp') v = s.v + s.step * big;
+      else if (e.key === 'PageDown') v = s.v - s.step * big;
+      else if (e.key === 'Home') v = s.min;
+      else if (e.key === 'End') v = s.max;
+      else if (e.key === 'Enter') { e.preventDefault(); edit(s); return; }
+      if (v == null) return;
+      e.preventDefault(); s.kbd = performance.now(); setV(s, v);
+    });
+  }
+
+  function edit(s) {
+    if (s.editing || !s.vEl) return;
+    s.editing = true;
+    const rr = s.root.getBoundingClientRect(), b = s.vEl.getBoundingClientRect();
+    const w = Math.max(56, b.width + 16), cx = b.left + b.width / 2 - rr.left;
+    const inp = el('input', 'edit', s.root);
+    inp.value = s.fmt(s.v).replace('−', '-'); inp.inputMode = 'decimal'; inp.setAttribute('aria-label', s.label);
+    Object.assign(inp.style, { left: clamp(cx - w / 2, -8, rr.width - w + 8) + 'px', width: w + 'px', top: '4px', height: '24px' });
+    inp.focus(); inp.select();
+    let done = false;
+    const close = ok => {
+      if (done) return; done = true;
+      if (ok) { const x = parseFloat(inp.value.replace('−', '-').replace(',', '.')); if (isFinite(x)) setV(s, x); }
+      inp.remove(); s.editing = false; s.root.focus({ preventScroll: true });
+    };
+    inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') close(true); else if (e.key === 'Escape') close(false); });
+    inp.addEventListener('blur', () => close(true));
+    inp.addEventListener('pointerdown', e => e.stopPropagation());
+  }
+
+  /* span helper: [L, R] in 0..1 of the filled part (from zero for bipolar ranges) */
+  const span = (s, d = s.d) => s.bip ? [Math.min(s.z, d), Math.max(s.z, d)] : [0, d];
+
+  /* ================= the ten designs ================= */
+  const designs = [];
+
+  /* 01 — fill pill */
+  designs.push({
+    cls: 'd-fill', mode: 'rel', sens: s => 1 / s.root.clientWidth,
+    build(s, r) {
+      r.innerHTML = `<div class="fp"><div class="fp-fill"></div><div class="fp-tx"><span class="lb"></span>${VAL}</div><div class="fp-tx fp-on"><span class="lb"></span>${VAL}</div></div>`;
+      r.querySelectorAll('.lb').forEach(l => l.textContent = s.label);
+      s.fp = r.querySelector('.fp'); s.fill = r.querySelector('.fp-fill'); s.on = r.querySelector('.fp-on');
+      if (s.few) for (let i = 1; i < s.n; i++) { const m = el('i', 'fp-mk'); m.style.left = (i / s.n * 100) + '%'; s.fp.insertBefore(m, s.on.previousSibling); }
+      if (s.bip) { const m = el('i', 'fp-mk zero'); m.style.left = s.z * 100 + '%'; s.fp.insertBefore(m, s.fill); }
+      s.vEl = r.querySelector('.v');
+    },
+    render(s) {
+      const W = s.fp.clientWidth; if (!W) return;
+      const [a, b] = span(s); const L = a * W, R = b * W;
+      const c = `inset(0 ${(W - R).toFixed(2)}px 0 ${L.toFixed(2)}px round 999px)`;
+      s.fill.style.clipPath = c; s.on.style.clipPath = c;
+      const o = Math.abs(s.over) / W;
+      const sx = (1 + o * .5) * (1 - .012 * s.pr), sy = (1 - o * .9) * (1 - .05 * s.pr);
+      s.fp.style.transformOrigin = s.over < 0 ? 'right center' : 'left center';
+      s.fp.style.transform = `scale(${sx}, ${sy})`;
+    },
+  });
+
+  /* 02 — scrubber field */
+  const chev = d => `<svg class="chev ${d}" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d === 'l' ? 'M5.5 1.5 3 4l2.5 2.5' : 'M2.5 1.5 5 4 2.5 6.5'}"/></svg>`;
+  designs.push({
+    cls: 'd-scrub', mode: 'rel', sens: s => s.few ? 1 / (s.n * 26) : 1 / 260,
+    build(s, r) {
+      r.innerHTML = `<div class="sc">${chev('l')}<span class="lb"></span>${VAL}${chev('r')}</div>`;
+      r.querySelector('.lb').textContent = s.label;
+      s.sc = r.querySelector('.sc');
+      if (s.few) { const d = el('div', 'sc-dots', s.sc); s.dots = []; for (let i = 1; i <= s.n; i++) s.dots.push(el('b', '', d)); }
+      else { const t = el('div', 'sc-tr', s.sc); s.fi = el('div', 'sc-fi', t); }
+    },
+    render(s) {
+      s.sc.style.transform = `translateX(${(s.over * .4).toFixed(2)}px)`;
+      if (s.fi) { const [a, b] = span(s); s.fi.style.left = a * 100 + '%'; s.fi.style.width = (b - a) * 100 + '%'; }
+      if (s.dots) { const k = Math.round(s.d * s.n); s.dots.forEach((d, i) => { d.classList.toggle('on', i < k); d.classList.toggle('cur', i === k - 1); }); }
+    },
+  });
+
+  /* 03 — ruler / tape */
+  designs.push({
+    cls: 'd-ruler', mode: 'rel', sens: s => -1 / s.stripW,
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="rl"><div class="rs"></div><div class="rn"></div></div>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      s.rl = r.querySelector('.rl'); s.rs = r.querySelector('.rs');
+      const count = s.few ? s.n : 60, sp = s.few ? 22 : 5;
+      s.count = count; s.stripW = count * sp; s.ticks = [];
+      for (let i = 0; i <= count; i++) {
+        const t = el('i', '', s.rs); t.style.left = i * sp + 'px';
+        if (s.few || i % 10 === 0) t.classList.add('mj');
+        if (s.bip && Math.abs(i / count - s.z) < 1e-6) t.classList.add('z');
+        s.ticks.push(t);
+      }
+    },
+    render(s) {
+      const W = s.rl.clientWidth;
+      const x = W / 2 - s.d * s.stripW - s.over;
+      s.rs.style.transform = `translateX(${x.toFixed(2)}px)`;
+      const [a, b] = span(s);
+      s.ticks.forEach((t, i) => { const p = i / s.count; const on = p >= a - 1e-6 && p <= b + 1e-6; if (t._on !== on) { t._on = on; t.classList.toggle('on', on); } });
+    },
+  });
+
+  /* 04 — notched segments */
+  designs.push({
+    cls: 'd-seg', mode: 'abs', hit: '.sg',
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="sg${s.few ? ' few' : ''}"></div>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      const g = r.querySelector('.sg'); s.N = s.few ? s.n : 16; s.cells = [];
+      for (let i = 0; i < s.N; i++) { const c = el('i', '', g); s.cells.push([c, el('b', '', c)]); }
+    },
+    render(s) {
+      const [a, b] = span(s); let moving = false;
+      s.cells.forEach(([c, f], i) => {
+        const c0 = i / s.N, c1 = (i + 1) / s.N;
+        const l = clamp((a - c0) * s.N, 0, 1), rr = clamp((b - c0) * s.N, 0, 1);
+        f.style.left = l * 100 + '%'; f.style.width = Math.max(0, rr - l) * 100 + '%';
+        let g = 0;
+        if (s.px >= -0.1 && s.px <= 1.1) { const dist = s.px * s.N - (i + .5); g = Math.exp(-dist * dist / 2.2); }
+        const tgt = 1 + .42 * g * s.hv + (i === (s.over > 0 ? s.N - 1 : 0) ? Math.abs(s.over) / 30 : 0);
+        c._k = c._k ?? 1; if (spr(c, '_k', tgt, 900, 1 / 60, .7)) moving = true;
+        c.style.transform = `scaleY(${c._k.toFixed(3)})`;
+      });
+      return moving;
+    },
+  });
+
+  /* 05 — goo knob */
+  designs.push({
+    cls: 'd-goo', mode: 'abs', hit: 'svg', inset: 11,
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><svg></svg>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      const g = r.querySelector('svg'), fid = 'goo' + s.id;
+      const f = sv('filter', { id: fid, x: '-20%', y: '-150%', width: '140%', height: '400%', 'color-interpolation-filters': 'sRGB' }, sv('defs', {}, g));
+      sv('feGaussianBlur', { stdDeviation: 2.4 }, f);
+      sv('feColorMatrix', { values: '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7' }, f);
+      s.gt = sv('rect', { class: 'trk', y: 14.5, height: 3, rx: 1.5 }, g);
+      s.ticksG = sv('g', {}, g);
+      const gg = sv('g', { filter: `url(#${fid})` }, g);
+      s.gf = sv('rect', { class: 'ink', y: 14, height: 4, rx: 2 }, gg);
+      s.tail = sv('ellipse', { class: 'ink', cy: 16 }, gg);
+      s.knob = sv('ellipse', { class: 'ink', cy: 16 }, gg);
+      s.dent = sv('circle', { class: 'dent', cy: 16, r: 0 }, g);
+      s.svg = g; s.tx = null;
+    },
+    render(s, dt) {
+      const W = s.svg.clientWidth || s.svg.getBoundingClientRect().width; if (!W) return;
+      const p = 11, X = t => p + t * (W - 2 * p);
+      if (s._w !== W) {
+        s._w = W; s.gt.setAttribute('x', p); s.gt.setAttribute('width', W - 2 * p);
+        s.ticksG.innerHTML = '';
+        if (s.few) for (let i = 0; i <= s.n; i++) sv('circle', { class: 'tk', cx: X(i / s.n), cy: 24, r: 1.2 }, s.ticksG);
+        if (s.bip) sv('rect', { class: 'tk', x: X(s.z) - .75, y: 21, width: 1.5, height: 6, rx: .75 }, s.ticksG);
+      }
+      const [a, b] = span(s);
+      s.gf.setAttribute('x', X(a)); s.gf.setAttribute('width', Math.max(0, X(b) - X(a)));
+      const kx = X(s.d) + s.over * .55;
+      const v = s.vel * (W - 2 * p);
+      const st = Math.min(Math.abs(v) / 1400, .5) + Math.abs(s.over) / 60;
+      const rad = 6.5 + 1.5 * s.hv;
+      s.knob.setAttribute('cx', kx); s.knob.setAttribute('rx', rad * (1 + st)); s.knob.setAttribute('ry', rad * (1 - st * .45));
+      if (s.tx == null) s.tx = kx;
+      const moving = spr(s, 'tx', kx, 170, dt || 1 / 60, .55);
+      const gap = Math.abs(s.tx - kx);
+      s.tail.setAttribute('cx', s.tx); s.tail.setAttribute('rx', Math.max(0, 4.2 - gap * .03)); s.tail.setAttribute('ry', Math.max(0, 4.2 - gap * .05));
+      s.dent.setAttribute('cx', kx); s.dent.setAttribute('r', Math.max(0, 2.6 * s.pr).toFixed(2));
+      return moving;
+    },
+  });
+
+  /* 06 — elastic track */
+  designs.push({
+    cls: 'd-elastic', mode: 'abs', hit: '.et',
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="et"><div class="etr"><div class="efi"></div></div></div>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      s.et = r.querySelector('.et'); s.etr = r.querySelector('.etr'); s.efi = r.querySelector('.efi');
+      const cuts = [];
+      if (s.few) for (let i = 1; i < s.n; i++) cuts.push(i / s.n * 100);
+      if (s.bip) cuts.push(s.z * 100);
+      if (cuts.length) {
+        let g = 'linear-gradient(to right'; for (const c of cuts) g += `, #000 calc(${c}% - 1.5px), transparent calc(${c}% - 1.5px), transparent calc(${c}% + 1.5px), #000 calc(${c}% + 1.5px)`;
+        g += ')'; s.etr.style.webkitMaskImage = s.etr.style.maskImage = g;
+      }
+    },
+    render(s) {
+      const W = s.et.clientWidth || 1;
+      const h = 4 + 6 * s.hv + 2 * s.pr;
+      const o = Math.abs(s.over) / W;
+      s.etr.style.height = h.toFixed(2) + 'px'; s.etr.style.marginTop = (-h / 2).toFixed(2) + 'px';
+      s.etr.style.transformOrigin = s.over < 0 ? 'right center' : 'left center';
+      s.etr.style.transform = `scale(${1 + o * .55}, ${Math.max(.45, 1 - o * 2.4)})`;
+      const [a, b] = span(s); s.efi.style.left = a * 100 + '%'; s.efi.style.width = (b - a) * 100 + '%';
+    },
+  });
+
+  /* 07 — value in the thumb */
+  designs.push({
+    cls: 'd-thumb', mode: 'abs', hit: '.tt', grab: '.tth', inset: s => (s.tw || 40) / 2,
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="tt"><div class="ttr"><div class="tfi"></div></div><div class="tth">${VAL}</div></div>`;
+      r.querySelector('.lb').textContent = s.label;
+      s.tt = r.querySelector('.tt'); s.tth = r.querySelector('.tth'); s.tfi = r.querySelector('.tfi'); s.ttr = r.querySelector('.ttr');
+      s.vEl = s.tth.querySelector('.v');
+    },
+    render(s) {
+      if (!s.tw) {
+        const vn = s.tth.querySelector('.vn'), keep = vn.textContent; let m = 0;
+        for (const x of [s.min, s.max, s.min + s.range * .55]) { vn.textContent = s.fmt(x); m = Math.max(m, s.tth.offsetWidth); }
+        vn.textContent = keep; if (!m) return; s.tw = Math.ceil(m) + 2; s.tth.style.width = s.tw + 'px';
+        if (s.few) for (let i = 0; i <= s.n; i++) { const d = el('i', 'tdt', s.tt); d.style.left = `calc(${s.tw / 2}px + (100% - ${s.tw}px) * ${i / s.n})`; }
+        s.ttr.style.left = s.ttr.style.right = s.tw / 2 - 4 + 'px';
+      }
+      const W = s.tt.clientWidth, tr = W - s.tw, cx = t => s.tw / 2 + t * tr;
+      const o = s.over;
+      const x = s.d * tr + o * .35;
+      const sq = 1 - Math.min(Math.abs(o) / 70, .3);
+      s.tth.style.transformOrigin = o < 0 ? 'left center' : 'right center';
+      s.tth.style.transform = `translateX(${x.toFixed(2)}px) scale(${(sq * (1 + .06 * s.pr)).toFixed(3)}, ${((2 - sq) * (1 + .06 * s.pr)).toFixed(3)})`;
+      const [a, b] = span(s); const base = s.tw / 2 - 4;
+      s.tfi.style.left = cx(a) - base + 'px'; s.tfi.style.width = Math.max(0, cx(b) - cx(a)) + 'px';
+    },
+  });
+
+  /* 08 — ramp of bars */
+  designs.push({
+    cls: 'd-ramp', mode: 'abs', hit: '.rp',
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="rp"><div class="rpl"></div><div class="rpl lit"></div></div>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      s.rp = r.querySelector('.rp'); [s.l0, s.l1] = r.querySelectorAll('.rpl');
+      const N = s.few ? s.n : 20;
+      for (const L of [s.l0, s.l1]) {
+        if (s.few) L.classList.add('few');
+        for (let i = 0; i < N; i++) {
+          const p = (i + .5) / N;
+          const k = s.bip ? Math.abs(p - s.z) / Math.max(s.z, 1 - s.z) : (s.few ? (i + 1) / N : i / (N - 1));
+          el('i', '', L).style.height = (4 + 14 * k).toFixed(1) + 'px';
+        }
+      }
+    },
+    render(s) {
+      const W = s.rp.clientWidth; const [a, b] = span(s);
+      s.l1.style.clipPath = `inset(0 ${((1 - b) * W).toFixed(2)}px 0 ${(a * W).toFixed(2)}px)`;
+      const o = Math.abs(s.over);
+      const tf = `scale(${1 + o / W * .5}, ${1 + o / 34})`;
+      for (const L of [s.l0, s.l1]) { L.style.transformOrigin = (s.over < 0 ? 'left' : 'right') + ' bottom'; L.style.transform = tf; }
+    },
+  });
+
+  /* 09 — goo value bubble */
+  designs.push({
+    cls: 'd-bubble', mode: 'abs', hit: '.bb', inset: 6,
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="bb"><div class="btr"><div class="bfi"></div></div><div class="bkn"></div><div class="btx"><span class="vn"></span><span class="vu"></span></div></div>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      s.bb = r.querySelector('.bb'); s.bfi = r.querySelector('.bfi'); s.bkn = r.querySelector('.bkn'); s.btx = r.querySelector('.btx'); s.btr = r.querySelector('.btr');
+      const g = sv('svg', { class: 'bsv' }); s.bb.prepend(g);
+      const fid = 'bub' + s.id;
+      const f = sv('filter', { id: fid, x: '-20%', y: '-50%', width: '140%', height: '200%', 'color-interpolation-filters': 'sRGB' }, sv('defs', {}, g));
+      sv('feGaussianBlur', { stdDeviation: 3 }, f);
+      sv('feColorMatrix', { values: '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9' }, f);
+      const gg = sv('g', { filter: `url(#${fid})` }, g);
+      s.strip = sv('rect', { class: 'fill', y: 42.5, height: 8 }, gg);
+      s.neck = sv('rect', { class: 'fill' }, gg);
+      s.bub = sv('rect', { class: 'fill', height: 24, rx: 12 }, gg);
+      s.bsv = g; s.rise = 0;
+      if (s.few) for (let i = 0; i <= s.n; i++) { const d = el('i', 'bdot', s.btr); d.style.left = i / s.n * 100 + '%'; }
+    },
+    onValue(s) { s.bw = 0; },
+    render(s, dt) {
+      const W = s.bb.clientWidth; if (!W) return;
+      const pad = 24, X = t => 6 + t * (W - 12);
+      if (s._w !== W) { s._w = W; Object.assign(s.bsv.style, { left: -pad + 'px', width: W + 2 * pad + 'px' }); s.strip.setAttribute('x', pad - 6); s.strip.setAttribute('width', W + 12); }
+      const [a, b] = span(s); s.bfi.style.left = (a * 100) + '%'; s.bfi.style.width = (b - a) * 100 + '%';
+      const kx = X(s.d) + s.over * .5;
+      s.bkn.style.transform = `translateX(${kx.toFixed(2)}px) scale(${(1 + .25 * s.hv - .1 * s.pr + Math.abs(s.over) / 80).toFixed(3)}, ${(1 + .25 * s.hv - .1 * s.pr).toFixed(3)})`;
+      const up = s.drag || performance.now() - s.kbd < 900;
+      const moving = spr(s, 'rise', up ? 1 : 0, 260, dt || 1 / 60, .5);
+      if (!s.bw) s.bw = Math.max(34, s.btx.offsetWidth + 18);
+      const rise = Math.max(0, s.rise), top = 40 - rise * 34, bx = kx + pad;
+      s.bub.setAttribute('x', bx - s.bw / 2); s.bub.setAttribute('y', top); s.bub.setAttribute('width', s.bw * (.4 + .6 * Math.min(1, rise)));
+      s.bub.setAttribute('x', bx - s.bw * (.4 + .6 * Math.min(1, rise)) / 2);
+      const nw = 12 - 6 * Math.min(1, rise);
+      s.neck.setAttribute('x', bx - nw / 2); s.neck.setAttribute('width', nw); s.neck.setAttribute('y', top + 12); s.neck.setAttribute('height', Math.max(0, 40 - top - 10));
+      s.btx.style.transform = `translate(${(kx - s.btx.offsetWidth / 2).toFixed(2)}px, ${(top - 44).toFixed(2)}px)`;
+      s.btx.style.opacity = clamp(rise * 1.6 - .5, 0, 1).toFixed(3);
+      return moving || up;
+    },
+  });
+
+  /* 10 — dial */
+  const pol = (r, a) => [14 + r * Math.sin(a * Math.PI / 180), 14 - r * Math.cos(a * Math.PI / 180)];
+  const arc = (r, a0, a1) => { if (a1 - a0 < .5) return ''; const [x0, y0] = pol(r, a0), [x1, y1] = pol(r, a1); return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`; };
+  designs.push({
+    cls: 'd-dial', mode: 'rel', vertical: true, sens: () => 1 / 160,
+    build(s, r) {
+      r.innerHTML = `<span class="lb"></span><div class="dl"><svg viewBox="0 0 28 28"><path class="a0"/><path class="a1"/><circle class="cap" cx="14" cy="14" r="7.5"/><line class="ptr"/></svg></div>${VAL}`;
+      r.querySelector('.lb').textContent = s.label;
+      s.a0 = r.querySelector('.a0'); s.a1 = r.querySelector('.a1'); s.ptr = r.querySelector('.ptr'); s.dsvg = r.querySelector('.dl svg');
+      const A = t => -135 + 270 * t;
+      s.A = A;
+      if (s.few) { let d = ''; for (let i = 0; i < s.n; i++) d += arc(12, A(i / s.n) + 4, A((i + 1) / s.n) - 4); s.a0.setAttribute('d', d); }
+      else s.a0.setAttribute('d', arc(12, -135, 135));
+    },
+    render(s) {
+      const A = s.A, [a, b] = span(s);
+      if (s.few) { let d = ''; const k = s.d * s.n; for (let i = 0; i < s.n; i++) { const f = clamp(k - i, 0, 1); if (f > 0) d += arc(12, A(i / s.n) + 4, A(i / s.n) + 4 + (270 / s.n - 8) * f); } s.a1.setAttribute('d', d); }
+      else s.a1.setAttribute('d', arc(12, A(a), A(b)));
+      const ang = A(s.d) + s.over * .6; const [x0, y0] = pol(2, ang), [x1, y1] = pol(6, ang);
+      s.ptr.setAttribute('x1', x0); s.ptr.setAttribute('y1', y0); s.ptr.setAttribute('x2', x1); s.ptr.setAttribute('y2', y1);
+    },
+  });
+
+  /* ================= page content ================= */
+  const R = {
+    hig: ['Apple HIG: Sliders', 'https://developer.apple.com/design/human-interface-guidelines/sliders'],
+    dial: ['DialKit', 'https://github.com/joshpuckett/dialkit'],
+    buildui: ['Build UI slider (21st.dev)', 'https://21st.dev/@builduilabs/components/slider'],
+    elastic: ['Framer: Elastic Slider', 'https://www.framer.com/marketplace/components/elastic-slider/'],
+    tweak: ['Tweakpane input bindings', 'https://tweakpane.github.io/docs/input-bindings/'],
+    smash: ['Smashing: Designing the perfect slider', 'https://www.smashingmagazine.com/2017/07/designing-perfect-slider/'],
+    geist: ['Vercel Geist: Slider', 'https://vercel.com/geist/slider'],
+    radix: ['Radix Themes: Slider', 'https://www.radix-ui.com/themes/docs/components/slider'],
+    theatre: ['Theatre.js prop types', 'https://www.theatrejs.com/docs/latest/manual/prop-types'],
+    emil: ['Emil Kowalski: great animations', 'https://emilkowal.ski/ui/great-animations'],
+    figma: ['Figma: scrubbing number fields', 'https://help.figma.com/hc/en-us/articles/360039956914-Adjust-alignment-rotation-position-and-dimensions'],
+    dd: ['Devouring Details (Rauno)', 'https://devouringdetails.com/'],
+    leva: ['Leva', 'https://github.com/pmndrs/leva'],
+  };
+  const INFO = [
+    { name: 'Fill pill', w: [196, 190, 140],
+      idea: 'The whole 32px slot is the slider: a tinted pill that fills from the left, with the label and value inside it. Where the fill covers the text, the text flips to the bar colour.',
+      how: 'No knob. Drag anywhere and it moves relative to where you grabbed it, so a click never makes it jump. Ranges that cross zero fill outward from a centre mark; ranges with few steps show notch dots and spring from notch to notch. Past either end the pill stretches and squashes, then springs back. Tap the value to type.',
+      why: 'It is the same shape as marmit pills and segmented controls, so it belongs on the bar, and it fits the most text into the least width.',
+      cons: 'With no knob, the exact position is less precise. At very low values the flipped text sits on a thin sliver of fill.',
+      refs: ['hig', 'geist', 'radix', 'emil'] },
+    { name: 'Scrubber field', w: [176, 170, 130],
+      idea: 'A pill-shaped number field. Drag it sideways to scrub the value, the way property fields work in Figma, Leva and Theatre.js. A hairline along the bottom shows where the value sits in its range.',
+      how: 'Hovering shows ‹ › hints and an ew-resize cursor. Drag sideways; hold Shift for 10× finer steps. Ranges with few steps show one dot per step, and each step takes 26px of drag. Past the ends the field nudges a few pixels and settles back. Tap to type.',
+      why: 'It is the most compact option and reads like a field, which suits a tool-like bar that already lets you type values. It can hold any range, even one with no fixed ends.',
+      cons: 'Nothing in its look says "drag me" until you hover it. Without a track you can\'t jump to a value with one click.',
+      refs: ['figma', 'leva', 'theatre', 'dial'] },
+    { name: 'Tape ruler', w: [196, 186, 136],
+      idea: 'A ruler of ticks slides under a fixed centre needle, like the straighten dial in iOS Photos or a camera dial. Ticks between zero and the value light up.',
+      how: 'You drag the tape itself: drag left and the value goes up. Ranges with many steps show minor and major ticks; ranges with few steps show one big tick per step and spring onto it. The ends rubber-band, and the edges fade out.',
+      why: 'It feels tactile and physical, it suits angles and offsets, and it fits easily in 32px.',
+      cons: 'It needs more width to read well (about 200px). Seeing the whole range at a glance is weaker, and dragging left to go up surprises some people.',
+      refs: ['hig', 'smash', 'dd'] },
+    { name: 'Notched segments', w: [200, 190, 140],
+      idea: 'The track is split into rounded cells, like the discrete watchOS slider. Cells fill up to the value, and the current cell is partly filled.',
+      how: 'Click or drag to set the value. Cells near the pointer swell in a soft wave. A range with few steps gets one cell per step (Stars has 5). A range with many steps gets 16 cells with a partial fill. Pulling past the end stretches the last cell.',
+      why: 'Steps and counts are easy to read, it matches the rounded vocabulary, and it works in light and dark.',
+      cons: 'Values between cells are only hinted at by the partial fill, so precise values depend on the number next to it.',
+      refs: ['hig', 'smash'] },
+    { name: 'Goo knob', w: [196, 190, 140],
+      idea: 'The current slider, made of marmit\'s own material: the knob and fill are one metaball. The knob stretches with speed, a droplet trails behind it, and pressing makes a dent.',
+      how: 'Click or drag. The knob squashes in the direction of travel and its tail catches up on a spring. Pulling past the end deforms the knob. Ranges with few steps get detent dots; ranges that cross zero get a centre mark.',
+      why: 'It is the closest to marmit\'s brand (goo, springs, a dent where you press) and the smallest change from today\'s slider.',
+      cons: 'The SVG goo filter costs more to render than plain CSS. The effect is subtle at 32px.',
+      refs: ['emil', 'hig'] },
+    { name: 'Elastic track', w: [196, 190, 140],
+      idea: 'A thin track with no knob that thickens when you hover or press it and stretches like rubber past its ends.',
+      how: 'At rest it is 4px. On hover it grows to 10px with a spring, and it gets thicker still while pressed. Dragging past an end stretches it lengthwise and thins it, with resistance that eases off, then it springs back. Ranges with few steps are cut into notches.',
+      why: 'It stays calm at rest and turns physical when you touch it, which is the soft-physics feel marmit is after.',
+      cons: 'With no knob, it is less clear where to grab. The stretch past the ends only shows up at the extremes.',
+      refs: ['elastic', 'buildui', 'emil'] },
+    { name: 'Value thumb', w: [196, 190, 150],
+      idea: 'The thumb is a small pill that carries the value. There is no separate number column; the label sits on the left.',
+      how: 'Grab the thumb to drag it without a jump, or click the track to jump. Tap the thumb to type. Pressing grows it a little, and at the ends it squashes against the wall. Ranges with few steps show tick dots.',
+      why: 'The value is always where your eye is. It also gives back the 36px the value column uses on a tight bar.',
+      cons: 'The thumb takes about 40px of travel, so short sliders lose precision. Long values like "−180°" make it wide.',
+      refs: ['hig', 'smash'] },
+    { name: 'Ramp bars', w: [196, 190, 140],
+      idea: 'A row of bars that get taller toward the high end, like a volume wedge. The value lights up the bars. Ranges that cross zero use a V shape that grows outward from zero.',
+      how: 'Click or drag. The lit edge follows the pointer smoothly, even partway through a bar. A range with few steps gets one bar per step. Pulling past the end makes the bars grow taller.',
+      why: 'It shows "how much" at a glance, which is ideal for intensity, opacity and blur. It looks distinctive on a black bar.',
+      cons: 'The rising shape carries meaning, so it reads oddly for values with no natural "more" (angle, hue).',
+      refs: ['hig', 'smash'] },
+    { name: 'Goo value bubble', w: [196, 190, 140],
+      idea: 'A slim track and knob. While you drag, a drop of the bar\'s own material grows out of the bar\'s top edge and shows the value above the knob.',
+      how: 'The bubble springs up on press and also during keyboard steps, then sinks back into the bar. The value also stays on the right for reading and typing. Ranges with few steps get detent dots.',
+      why: 'It uses marmit\'s goo and the bar as one surface. The value is readable above your finger on touch screens.',
+      cons: 'It draws outside the bar, so it needs room above and can\'t sit in a clipped container. It is the most complex to build.',
+      refs: ['hig', 'smash', 'emil'] },
+    { name: 'Dial', w: [136, 136, 112],
+      idea: 'A 28px rotary knob with an arc meter. The label and value sit beside it, as on hardware.',
+      how: 'Drag up or right to turn it up (Shift for fine). It presses in with a dent and grows a little on hover. Ranges with few steps show the arc as separate segments; ranges that cross zero fill from 12 o\'clock.',
+      why: 'It is the narrowest option (about 120px), it is natural for angles and gains, and it fits marmit\'s round shapes.',
+      cons: 'Drag direction is ambiguous for some people. A 270° sweep limits precision on ranges with many steps.',
+      refs: ['hig', 'theatre', 'tweak'] },
+  ];
+
+  const ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h10"/><circle cx="6" cy="4.5" r="1.4" fill="currentColor"/><circle cx="10.5" cy="8" r="1.4" fill="currentColor"/><circle cx="5" cy="11.5" r="1.4" fill="currentColor"/></svg>';
+  const MORE = '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>';
+  const main = document.getElementById('main');
+
+  designs.forEach((D, i) => {
+    const I = INFO[i];
+    const card = el('section', 'card', main); card.id = 'd' + (i + 1);
+    const stage = el('div', 'stage', card);
+    const txt = el('div', '', card);
+    txt.innerHTML = `<h2><small>${String(i + 1).padStart(2, '0')}</small><span></span></h2><p class="idea"></p><dl><dt>Behaviour</dt><dd class="how"></dd><dt>Why marmit</dt><dd class="why"></dd><dt>Trade-offs</dt><dd class="cons"></dd><dt>Refs</dt><dd class="refs"></dd></dl>`;
+    txt.querySelector('h2 span').textContent = I.name;
+    txt.querySelector('.idea').textContent = I.idea;
+    txt.querySelector('.how').textContent = I.how;
+    txt.querySelector('.why').textContent = I.why;
+    txt.querySelector('.cons').textContent = I.cons;
+    txt.querySelector('.refs').innerHTML = I.refs.map(k => `<a href="${R[k][1]}" target="_blank" rel="noopener">${R[k][0]}</a>`).join(' · ');
+
+    const readout = el('div', 'readout');
+    const vals = {};
+    const show = () => { readout.textContent = Object.entries(vals).map(([k, v]) => `${k} ${v}`).join('   '); };
+    const mk = (o, w) => slider(D, { ...o, onChange: s => { vals[s.label] = s.fmt(s.v) + s.unitTxt; show(); } }, w);
+
+    const bar = el('div', 'bar', stage);
+    el('div', 'ib', bar, ICON); el('i', 'sep', bar);
+    bar.append(mk({ label: 'Opacity', min: 0, max: 100, step: 1, value: 72, unit: '%' }, I.w[0])); el('i', 'sep', bar);
+    bar.append(mk({ label: 'Rotate', min: -180, max: 180, step: 1, value: 45, unit: '°' }, I.w[1])); el('i', 'sep', bar);
+    bar.append(mk({ label: 'Stars', min: 0, max: 5, step: 1, value: 3, unit: '' }, I.w[2])); el('i', 'sep', bar);
+    el('div', 'ib', bar, MORE);
+
+    const panel = el('div', 'panel', stage);
+    el('div', 'ph', panel, '<span>Transform</span><span>panel · 268px</span>');
+    panel.append(mk({ label: 'Scale', min: 0.1, max: 3, step: 0.01, value: 1.5, unit: '×' }));
+    panel.append(mk({ label: 'Radius', min: 0, max: 48, step: 2, value: 12, unit: 'px' }));
+    panel.append(mk({ label: 'Blur', min: 0, max: 4, step: 1, value: 2, unit: '' }));
+    stage.append(readout);
+  });
+
+  /* theme toggle */
+  const tg = document.querySelector('.theme'), thumb = tg.querySelector('i');
+  const place = () => { const b = tg.querySelector('[aria-checked=true]'); thumb.style.width = b.offsetWidth + 'px'; thumb.style.transform = `translateX(${b.offsetLeft - 4}px)`; };
+  tg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    tg.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', x === b));
+    document.body.dataset.theme = b.dataset.t; place();
+  });
+  requestAnimationFrame(place);
+})();
+</script>
+</body>
+</html>

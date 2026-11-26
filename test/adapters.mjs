@@ -44,7 +44,7 @@ for (const f of fws) {
     await page.mouse.click(...c); await wait(500);
   };
   const text = sel => page.$eval(sel, el => el.textContent).catch(() => '(missing)');
-  const labels = () => page.$$eval('.mm-label', els => els.map(e => e.textContent));
+  const labels = () => page.$$eval('.mm-label, .mm-sf-tx:not(.on) .mm-sf-l', els => els.map(e => e.textContent));
 
   if (f === 'react') {
     check('react: renders a React node as the icon', !!(await page.$('.mm [aria-label="Star"] svg path')));

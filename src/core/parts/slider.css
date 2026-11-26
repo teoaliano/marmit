@@ -1,0 +1,54 @@
+/* slider variants: fill, notched, knob (.mm-slider rules in styles.css are the rail the transition panel draws) */
+
+/* fill: a tinted pill that fills; label and value sit inside it, and flip to the bar colour where the fill covers them */
+/* (no position here: as a bar item it must stay absolutely placed; it is the containing block either way) */
+.mm .mm-sf { height: 32px; border-radius: 999px; cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mm .mm-sf:focus-visible { outline: none; }
+.mm .mm-sf-base { position: absolute; inset: 0; border-radius: 999px; background: var(--mm-tint); overflow: hidden; transition: background .2s ease-out; }
+.mm .mm-sf-base.settle { transition: transform .45s var(--mm-ease), background .2s ease-out; }
+.mm .mm-sf:hover .mm-sf-base, .mm .mm-sf.drag .mm-sf-base { background: var(--mm-tint-2); }
+.mm .mm-sf-fill { position: absolute; inset: 0; background: var(--mm-ink); opacity: .9; transition: opacity .2s ease-out; }
+.mm .mm-sf:hover .mm-sf-fill, .mm .mm-sf.drag .mm-sf-fill, .mm .mm-sf:focus-visible .mm-sf-fill { opacity: 1; }
+.mm .mm-sf-tx { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; pointer-events: none; white-space: nowrap; }
+.mm .mm-sf-l { color: var(--mm-muted); overflow: hidden; text-overflow: ellipsis; transition: color .2s ease-out; }
+.mm .mm-sf:hover .mm-sf-tx:not(.on) .mm-sf-l, .mm .mm-sf.drag .mm-sf-tx:not(.on) .mm-sf-l, .mm .mm-sf:focus-visible .mm-sf-tx:not(.on) .mm-sf-l { color: var(--mm-ink); }
+.mm .mm-sf-v { font-variant-numeric: tabular-nums; min-width: 0; }
+.mm .mm-sf-tx.on { color: var(--mm-on-accent); }
+.mm .mm-sf-tx.on .mm-sf-l, .mm .mm-sf-tx.on .mm-unit { color: color-mix(in oklch, var(--mm-on-accent) 70%, transparent); }
+.mm .mm-sf-tx .mm-num-input { pointer-events: auto; text-align: right; }
+.mm .mm-sf.editing .mm-sf-tx.on .mm-sf-v { visibility: hidden; }
+.mm .mm-sf-marks { position: absolute; inset: 0; pointer-events: none; }
+.mm .mm-sf-mk { position: absolute; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--mm-ink); opacity: .28; }
+.mm .mm-sf-mk.zero { width: 1.5px; height: 12px; margin: -6px 0 0 -.75px; border-radius: 1px; }
+
+/* notched: one rounded cell per value; the cells up to the value are lit */
+.mm .mm-sn { display: flex; align-items: center; gap: 2px; height: 32px; cursor: pointer; touch-action: none; }
+.mm .mm-sn.few { gap: 3px; }
+.mm .mm-sn:focus-visible { outline: none; }
+/* the cells' scale is sprung in JS (the squish wave), so no transform transition here */
+.mm .mm-sn i { flex: 1; height: 14px; border-radius: 3px; background: var(--mm-tint-2); transition: background .15s ease-out; will-change: transform; }
+.mm .mm-sn.few i { height: 16px; border-radius: 5px; }
+.mm .mm-sn i.on { background: var(--mm-ink); }
+.mm .mm-sv:has(.mm-sn:focus-visible, .mm-kn:focus-visible, .drag) > .mm-label { color: var(--mm-ink); }
+
+/* knob: a 28px dial with a 270° arc; the ring is cut into segments for few steps */
+.mm .mm-kn { width: 28px; height: 28px; flex: none; cursor: ns-resize; touch-action: none; border-radius: 50%; transition: transform .3s var(--mm-ease); }
+.mm .mm-kn:hover { transform: scale(1.07); }
+.mm .mm-kn.drag { transform: scale(.92); }
+.mm .mm-kn:focus-visible { outline: none; }
+.mm .mm-kn svg { width: 28px; height: 28px; display: block; overflow: visible; }
+.mm .mm-kn-a0 { fill: none; stroke: var(--mm-tint-2); stroke-width: 2.5; stroke-linecap: round; }
+.mm .mm-kn-a1 { fill: none; stroke: var(--mm-ink); stroke-width: 2.5; stroke-linecap: round; }
+.mm .mm-kn-cap { fill: var(--mm-tint); transition: fill .2s ease-out; }
+.mm .mm-kn:hover .mm-kn-cap, .mm .mm-kn:focus-visible .mm-kn-cap, .mm .mm-kn.drag .mm-kn-cap { fill: var(--mm-tint-2); }
+.mm .mm-kn-ptr { stroke: var(--mm-ink); stroke-width: 2; stroke-linecap: round; }
+.mm .mm-sknob .mm-value { min-width: 0; }
+
+/* stacked knob (knobs panel): label above, knob, value below */
+.mm .mm-sknob.stack { flex-direction: column; justify-content: center; gap: 4px; height: auto; padding: 4px 0; }
+.mm .mm-sknob.stack > .mm-label { padding: 0; font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm .mm-sknob.stack .mm-kn, .mm .mm-sknob.stack .mm-kn svg { width: 32px; height: 32px; }
+.mm .mm-sknob.stack > .mm-value { font-size: 11px; text-align: center; min-width: 0; }
+.mm .mm-knobs { display: grid; grid-template-columns: repeat(var(--cols, 4), 64px); gap: 6px 4px; padding: 0 2px 2px; }
+.mm .mm-knobs > .mm-sknob { border-radius: 12px; transition: background .2s ease-out; }
+.mm .mm-knobs > .mm-sknob:hover { background: var(--mm-tint); }

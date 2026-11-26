@@ -1,101 +1,19 @@
 /* The controls that ride on the bar, and the panels that grow out of it. Each control owns one element (placed on the
    bar by the engine) and, for panel triggers, builds the panel's content on demand. */
-import { icons } from './icons';
 import { clamp } from './physics';
-import type { IslandItem, IslandItemType, MenuEntry, Option, OptionInput, Slot } from './types';
-
-export interface Ctx {
-  /** draw a slot value into `into`, keyed so adapters can keep their portals stable */
-  slot(key: string, value: Slot, into: HTMLElement): void;
-  dropSlots(prefix: string): void;
-  emit(c: Ctl, value: unknown): void;
-  /** a button press, menu choice, tile or command: reported to options.onAction */
-  action(c: Ctl, entry?: string): void;
-  relayout(): void;
-  toggle(c: Ctl): void;
-  closePanel(focusTrigger?: boolean): void;
-  setSearch(c: Ctl, open: boolean): void;
-  /** the angle the item currently sits at on the bar */
-  angleOf(c: Ctl): number;
-}
-
-export interface PanelDef {
-  build(pc: HTMLElement): void;
-  /** called whenever the panel opens; return the element to focus when opened from the keyboard */
-  onOpen?(pc: HTMLElement): HTMLElement | null | undefined;
-}
-
-export interface Ctl {
-  key: string;
-  type: IslandItemType;
-  cfg: any;
-  el: HTMLElement;
-  /** size along the bar, measured; separators reserve a fixed slot */
-  w: number;
-  fixedW?: number;
-  /** rotates with the bar's curve (wide controls, separators); square items stay upright */
-  follow: boolean;
-  /** pressing dents the bar under it */
-  dent: boolean;
-  /** a drag of the bar may start on it */
-  drag: boolean;
-  value?: unknown;
-  hasValue: boolean;
-  sig: string;
-  apply(): void;
-  render(): void;
-  panel?: PanelDef;
-  trigger?: HTMLElement;
-  pc?: HTMLElement;
-  // placement, written by the engine
-  x: number; y: number; angle: number; u: number;
-  // search state
-  open?: boolean;
-  destroy?(): void;
-}
+import type { IslandItem, IslandItemType, MenuEntry, OptionInput } from './types';
+import { arrows, h, head, ic, opt, signature, trigger, type Build, type Ctl, type Ctx } from './parts/dom';
+import { fields } from './parts/fields';
+import { anchor } from './parts/anchor';
+import { pad } from './parts/pad';
+import { transition } from './parts/transition';
+import { gradient } from './parts/gradient';
+import { color } from './parts/color';
+import { sliderVariant } from './parts/slider';
+import { knobs } from './parts/knobs';
+export { h, signature, type Build, type Ctl, type Ctx, type PanelDef } from './parts/dom';
 
 /* ---------- helpers ---------- */
-export function h<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, attrs?: Record<string, string | number | boolean | undefined>, ...kids: (Node | string)[]) {
-  const el = document.createElement(tag);
-  if (cls) el.className = cls;
-  if (attrs) for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== false) el.setAttribute(k, v === true ? '' : String(v));
-  el.append(...kids);
-  return el;
-}
-const ic = (name: string) => { const s = h('span', 'mm-ic'); s.innerHTML = icons[name]; return s; };
-export const opt = (o: OptionInput): Option => typeof o === 'string' ? { value: o, label: o } : { ...o, label: o.label ?? o.value };
-
-let nodeIds = new WeakMap<object, number>(), nodeSeq = 0;
-/** a signature of everything structural in a config: functions and adapter values are left out, nodes by identity */
-export function signature(cfg: Record<string, unknown>) {
-  const walk = (v: unknown): unknown => {
-    if (v == null || typeof v !== 'object') return typeof v === 'function' ? undefined : v;
-    if (typeof Node !== 'undefined' && v instanceof Node) {
-      let id = nodeIds.get(v); if (!id) nodeIds.set(v, id = ++nodeSeq); return '#n' + id;
-    }
-    if (Array.isArray(v)) return v.map(walk);
-    if (Object.getPrototypeOf(v) !== Object.prototype || '$$typeof' in v || '__v_isVNode' in v) return '#x';
-    const o: Record<string, unknown> = {};
-    for (const k of Object.keys(v)) o[k] = walk((v as Record<string, unknown>)[k]);
-    return o;
-  };
-  const { value: _v, ...rest } = cfg;
-  return JSON.stringify(walk(rest));
-}
-
-/** roving arrow-key focus inside a group */
-function arrows(root: HTMLElement, sel: string, onMove?: (el: HTMLElement) => void) {
-  root.addEventListener('keydown', e => {
-    const ks: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
-    if (!(e.key in ks) && e.key !== 'Home' && e.key !== 'End') return;
-    const all = [...root.querySelectorAll<HTMLElement>(sel)].filter(x => !x.hasAttribute('disabled') && x.getAttribute('aria-disabled') !== 'true');
-    if (!all.length) return;
-    const i = all.indexOf(document.activeElement as HTMLElement);
-    const n = e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : (i + ks[e.key] + all.length) % all.length;
-    e.preventDefault(); e.stopPropagation(); all[n].focus(); onMove?.(all[n]);
-  });
-}
-
 const fmtNum = (v: number, step: number) => {
   const d = Math.max(0, Math.min(6, (String(step).split('.')[1] || '').length));
   return v.toFixed(d);
@@ -103,7 +21,6 @@ const fmtNum = (v: number, step: number) => {
 const snapStep = (v: number, min: number, max: number, step: number) => clamp(Math.round((v - min) / step) * step + min, min, max);
 
 /* ---------- controls ---------- */
-type Build = (c: Ctl, ctx: Ctx) => void;
 
 const button: Build = (c, ctx) => {
   const el = h('button', 'mm-btn', { type: 'button' }), icon = h('span', 'mm-ic'); let badge = null as HTMLElement | null;
@@ -178,41 +95,8 @@ const sw: Build = (c, ctx) => {
   c.apply = () => b.setAttribute('aria-checked', String(!!c.value));
 };
 
-const slider: Build = (c, ctx) => {
-  const el = h('div', 'mm-labeled'), lab = h('span', 'mm-label'), tr = h('div', 'mm-slider', { role: 'slider', tabindex: 0 }),
-    fill = h('div', 'mm-fill'), knob = h('div', 'mm-knob'), out = h('span', 'mm-value');
-  tr.append(fill, knob); el.append(lab, tr, out); el.dataset.mmNodrag = '';
-  c.el = el; c.follow = true; c.hasValue = true;
-  const lim = () => { const min = c.cfg.min ?? 0, max = c.cfg.max ?? 100; return { min, max, step: c.cfg.step ?? (max - min > 10 ? 1 : (max - min) / 100) }; };
-  const set = (v: number) => { const { min, max, step } = lim(); v = snapStep(v, min, max, step); if (v !== c.value) { c.value = v; c.apply(); ctx.emit(c, v); } };
-  const at = (e: PointerEvent) => {
-    const r = tr.getBoundingClientRect(), a = ctx.angleOf(c), w = tr.offsetWidth;
-    const local = (e.clientX - (r.left + r.width / 2)) * Math.cos(a) + (e.clientY - (r.top + r.height / 2)) * Math.sin(a) + w / 2;
-    const { min, max } = lim(); set(min + clamp(local / w, 0, 1) * (max - min));
-  };
-  tr.addEventListener('pointerdown', e => { if (e.button) return; e.stopPropagation(); tr.classList.add('drag'); tr.setPointerCapture(e.pointerId); at(e); });
-  tr.addEventListener('pointermove', e => { if (tr.classList.contains('drag')) at(e); });
-  const end = () => tr.classList.remove('drag');
-  tr.addEventListener('pointerup', end); tr.addEventListener('pointercancel', end);
-  tr.addEventListener('keydown', e => {
-    const { min, max, step } = lim(), v = c.value as number;
-    const d: Record<string, number> = { ArrowRight: step, ArrowUp: step, ArrowLeft: -step, ArrowDown: -step, PageUp: step * 10, PageDown: -step * 10 };
-    if (e.key in d) set(v + d[e.key]); else if (e.key === 'Home') set(min); else if (e.key === 'End') set(max); else return;
-    e.preventDefault(); e.stopPropagation();
-  });
-  c.render = () => {
-    lab.textContent = c.cfg.label ?? ''; lab.hidden = !c.cfg.label; tr.style.width = (c.cfg.width ?? 120) + 'px'; out.hidden = c.cfg.showValue === false;
-    const { min, max } = lim(); tr.setAttribute('aria-valuemin', String(min)); tr.setAttribute('aria-valuemax', String(max));
-    tr.setAttribute('aria-label', c.cfg.label ?? 'Value');
-    if (typeof c.value !== 'number') c.value = c.cfg.value ?? (min + max) / 2;
-  };
-  c.apply = () => {
-    const { min, max, step } = lim(), v = c.value as number, f = max > min ? clamp((v - min) / (max - min), 0, 1) : 0;
-    fill.style.width = f * 100 + '%'; knob.style.left = f * 100 + '%';
-    const txt = c.cfg.format ? c.cfg.format(v) : fmtNum(v, step);
-    out.textContent = txt; tr.setAttribute('aria-valuenow', String(v)); tr.setAttribute('aria-valuetext', txt);
-  };
-};
+/** a slider: fill (default), notched or knob; see parts/slider.ts */
+const slider: Build = (c, ctx) => sliderVariant(c, ctx, c.cfg.variant ?? 'fill');
 
 const stepper: Build = (c, ctx) => {
   const el = h('div', 'mm-labeled'), lab = h('span', 'mm-label'), box = h('div', 'mm-stepper', { role: 'spinbutton', tabindex: 0 }),
@@ -330,33 +214,6 @@ const custom: Build = (c, ctx) => {
   };
 };
 
-/* ---------- panel triggers ---------- */
-function trigger(c: Ctl, ctx: Ctx, pillLabel?: () => string) {
-  const usePill = () => c.cfg.trigger === 'pill' || (c.cfg.trigger !== 'icon' && (!c.cfg.icon || !!pillLabel));
-  let el: HTMLElement;
-  const make = () => {
-    const pill = usePill();
-    el = h('button', pill ? 'mm-pill' : 'mm-btn', { type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false' });
-    el.addEventListener('click', () => ctx.toggle(c));
-    c.el = el; c.trigger = el; c.dent = true; c.drag = true; c.follow = pill;
-  };
-  make();
-  return () => {
-    ctx.dropSlots(c.key + '/t/');
-    el.setAttribute('aria-label', c.cfg.label);
-    el.replaceChildren();
-    if (usePill()) {
-      if (c.cfg.icon) { const i = h('span', 'mm-ic'); ctx.slot(c.key + '/t/icon', c.cfg.icon, i); el.append(i); }
-      const chev = ic('chevron'); chev.className = 'mm-chev';
-      el.append(pillLabel ? pillLabel() : c.cfg.label, chev);
-    } else {
-      const i = h('span', 'mm-ic'); ctx.slot(c.key + '/t/icon', c.cfg.icon, i); el.append(i);
-    }
-  };
-}
-const head = (title: string | false | undefined, fallback: string, right?: Node) =>
-  title === false ? null : h('div', 'mm-ph', {}, h('span', '', {}, title ?? fallback), ...(right ? [right] : []));
-
 function rowsKeys(root: HTMLElement) { arrows(root, '[data-mm-focus]'); }
 
 const menu: Build = (c, ctx) => {
@@ -438,38 +295,6 @@ const grid: Build = (c, ctx) => {
   };
 };
 
-const SWATCHES = ['#111111', '#6b6b73', '#e4e4e7', '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
-const color: Build = (c, ctx) => {
-  c.hasValue = true;
-  const renderTrigger = trigger(c, ctx);
-  const os = () => (c.cfg.options as string[] | undefined) ?? SWATCHES;
-  let hex: HTMLElement | null = null, prev: HTMLElement | null = null;
-  c.render = () => { if (c.value === undefined) c.value = os()[Math.min(8, os().length - 1)]; renderTrigger(); };
-  c.apply = () => {
-    if (hex) hex.textContent = String(c.value).toUpperCase();
-    if (prev) prev.style.background = String(c.value);
-    c.pc?.querySelectorAll<HTMLElement>('[data-v]').forEach(b => { const v = b.dataset.v === c.value; b.setAttribute('aria-checked', String(v)); b.tabIndex = v ? 0 : -1; });
-    c.trigger?.style.setProperty('--mm-swatch', String(c.value));
-  };
-  c.panel = {
-    build(pc) {
-      hex = h('span'); prev = h('div', 'mm-prev', {}, h('span', '', {}, 'Preview'), h('span', '', {}, '100%'));
-      const g = h('div', 'mm-swg', { role: 'radiogroup', 'aria-label': c.cfg.label });
-      g.style.setProperty('--cols', String(c.cfg.columns ?? 6));
-      os().forEach(col => {
-        const b = h('button', '', { type: 'button', role: 'radio', 'data-v': col, 'aria-label': col });
-        b.style.setProperty('--c', col);
-        b.addEventListener('click', () => { if (c.value !== col) { c.value = col; c.apply(); ctx.emit(c, col); } });
-        g.append(b);
-      });
-      arrows(g, 'button', b => b.click());
-      pc.replaceChildren(...[head(c.cfg.title, c.cfg.label, hex)].filter(Boolean) as Node[], g, prev);
-      c.apply();
-    },
-    onOpen: pc => pc.querySelector<HTMLElement>('[aria-checked=true]'),
-  };
-};
-
 const command: Build = (c, ctx) => {
   const renderTrigger = trigger(c, ctx);
   c.render = () => renderTrigger();
@@ -531,6 +356,7 @@ const panel: Build = (c, ctx) => {
 const BUILDERS: Record<IslandItemType, Build> = {
   button, pill, separator, spacer, label, segmented, switch: sw, slider, stepper, swatches: dots(false), thumbs: dots(true),
   field, search, status, avatars, progress, custom, menu, select, grid, color, command, panel,
+  fields, anchor, pad, transition, gradient, knobs,
 };
 
 export function createControl(key: string, cfg: IslandItem, ctx: Ctx): Ctl {
@@ -573,6 +399,8 @@ export function collectSlots(items: IslandItem[], visit: (key: string, value: un
       case 'segmented': (a.options as OptionInput[]).forEach((o, i) => typeof o === 'object' && v(`/opt/${i}/icon`, o.icon)); break;
       case 'field': v('/icon', a.icon); break;
       case 'custom': v('/render', a.render); break;
+      case 'pad': case 'transition': case 'gradient': case 'knobs': v('/t/icon', a.icon); break;
+      case 'anchor': if (a.display === 'panel') v('/t/icon', a.icon); break;
       case 'menu': case 'grid': case 'command': case 'color': case 'select': case 'panel':
         v('/t/icon', a.icon);
         if (it.type === 'panel') v('/p/content', a.content);

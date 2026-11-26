@@ -1,0 +1,52 @@
+/* color */
+/* the trigger's swatch: before the label on a pill, a corner dot on an icon button */
+.mm .mm-col-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-left: -2px;
+  background: linear-gradient(var(--mm-swatch, #888), var(--mm-swatch, #888)), repeating-conic-gradient(#d4d4d8 0 25%, #fff 0 50%) 0 0 / 6px 6px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); }
+.mm .mm-btn.mm-col-trig .mm-col-dot { position: absolute; right: 3px; bottom: 3px; width: 10px; height: 10px; margin: 0; box-shadow: 0 0 0 2px var(--mm-bar); }
+.mm .mm-btn.mm-col-trig.mm-col-bare .mm-ic { display: none; }
+.mm .mm-btn.mm-col-trig.mm-col-bare .mm-col-dot { position: static; width: 18px; height: 18px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); }
+
+.mm .mm-col { width: 240px; display: flex; flex-direction: column; gap: 8px; }
+.mm .mm-col .mm-ph { padding-bottom: 2px; }
+.mm .mm-col-out { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--mm-ink); user-select: all; }
+
+.mm .mm-col-fmt { height: 28px; }
+.mm .mm-col-fmt button { flex: 1; justify-content: center; padding: 0 6px; font-size: 12px; }
+
+.mm .mm-col-plane { position: relative; height: 150px; border-radius: 9px; cursor: crosshair; touch-action: none; }
+.mm .mm-col-plane canvas { display: block; width: 100%; height: 100%; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
+.mm .mm-col-plane:focus-visible { outline-offset: 2px; }
+.mm .mm-col-mark { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgb(0 0 0 / .25), 0 1px 4px 2px rgb(0 0 0 / .25); transition: transform .15s ease-out; }
+.mm .mm-col-plane.drag .mm-col-mark, .mm .mm-col-plane:focus-visible .mm-col-mark { transform: scale(1.2); }
+
+/* hue and opacity: native ranges, the track is the gradient, the thumb a ring filled with the colour */
+.mm .mm-col-tracks { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+.mm .mm-col-range { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 12px; margin: 0; border-radius: 12px; cursor: pointer; background: none;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
+.mm .mm-col-range.hue { background: var(--mm-col-track, linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red)); }
+.mm .mm-col-range.op { background: linear-gradient(to right, transparent, var(--mm-col-solid)), repeating-conic-gradient(#d4d4d8 0 25%, #fff 0 50%) 0 0 / 8px 8px; }
+.mm .mm-col-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--mm-col-solid);
+  box-shadow: 0 0 0 2.5px #fff, 0 1px 4px 1px rgb(0 0 0 / .35); transition: transform .15s ease-out; }
+.mm .mm-col-range::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--mm-col-solid); box-shadow: 0 0 0 2.5px #fff, 0 1px 4px 1px rgb(0 0 0 / .35); }
+.mm .mm-col-range:hover::-webkit-slider-thumb, .mm .mm-col-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+.mm .mm-col-range:focus-visible { outline-offset: 3px; }
+
+/* eyedropper + channel fields: the fields-row pills, the letter (or %) is the scrub handle */
+.mm .mm-col-row { display: flex; align-items: center; gap: 4px; }
+.mm .mm-col-eye { flex: none; width: 26px; height: 26px; margin-left: -3px; }
+.mm .mm-col-eye svg { width: 15px; height: 15px; }
+.mm .mm-col-flds { flex: 1; min-width: 0; display: flex; gap: 4px; }
+.mm .mm-col-fld { flex: 1 1 0; min-width: 0; height: 26px; padding-right: 5px; font-size: 11.5px; cursor: text; }
+.mm .mm-col-fld.hex { flex: 2.4 1 0; padding-left: 10px; }
+.mm .mm-col-fld.unit { flex: 0 0 46px; padding: 0 0 0 7px; }
+.mm .mm-col-fld .mm-fld-ax { width: 14px; padding-left: 3px; }
+.mm .mm-col-fld.unit .mm-fld-ax { width: 16px; padding: 0 3px 0 0; }
+.mm .mm-col-in { all: unset; flex: 1; min-width: 0; width: 100%; font: inherit; font-variant-numeric: tabular-nums; color: var(--mm-ink); text-align: left; }
+.mm .mm-col-fld.unit .mm-col-in { text-align: right; }
+.mm .mm-col-in[aria-invalid=true] { color: var(--mm-danger); }
+.mm .mm-col-fld:has(.mm-col-in:focus-visible) { outline: none; box-shadow: 0 0 0 1.5px var(--mm-track); }
+
+.mm .mm-col .mm-swg { grid-template-columns: repeat(var(--cols, 8), 1fr); gap: 8px; padding: 4px 0 0; justify-items: center; }
+.mm .mm-col .mm-swg button { width: 22px; height: 22px; }

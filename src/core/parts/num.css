@@ -1,0 +1,5 @@
+/* num */
+/* shared by every scrubbable number */
+html.mm-scrub, html.mm-scrub * { cursor: ew-resize !important; user-select: none !important; }
+.mm-num-input { all: unset; box-sizing: content-box; min-width: 3ch; font: inherit; font-variant-numeric: tabular-nums; color: var(--mm-ink); text-align: inherit; }
+.mm-unit { color: var(--mm-muted); }

@@ -1,5 +1,15 @@
-import css from './styles.css';
+import base from './styles.css';
+import num from './parts/num.css';
+import fields from './parts/fields.css';
+import anchor from './parts/anchor.css';
+import pad from './parts/pad.css';
+import transition from './parts/transition.css';
+import gradient from './parts/gradient.css';
+import color from './parts/color.css';
+import slider from './parts/slider.css';
 
+/* the base sheet, then one per control family; the build concatenates the same files into dist/styles.css */
+const css = [base, num, slider, fields, anchor, pad, transition, gradient, color].join('\n');
 export const styles: string = css;
 let refs = 0, el: HTMLStyleElement | null = null;
 

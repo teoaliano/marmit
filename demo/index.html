@@ -7,11 +7,18 @@
 <style>
   :root { color-scheme: dark; }
   html, body { margin: 0; background: #2a2d33; color: #fff; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
-  main { max-width: 880px; margin: 0 auto; padding: 40px 20px 180px; display: flex; flex-direction: column; gap: 34px; align-items: center; }
+  main { max-width: 880px; margin: 0 auto; padding: 110px 20px 180px; display: flex; flex-direction: column; gap: 34px; align-items: center; }
   h1 { font-size: 15px; font-weight: 600; margin: 0; }
   p.cap { margin: 0 0 10px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: rgb(255 255 255 / .55); text-align: center; }
   section { width: 100%; display: flex; flex-direction: column; align-items: center; }
   .stage { position: relative; width: 100%; height: 420px; border-radius: 14px; background: rgb(255 255 255 / .04); overflow: hidden; }
+  .tune-dials .mm-label { min-width: 78px; } /* line the dial tracks up */
+  .tune-help { position: fixed; z-index: 2147483647; width: 220px; padding: 8px 10px; border-radius: 10px; background: #000; color: #fff;
+    font: 12px/1.45 -apple-system, BlinkMacSystemFont, "Inter", sans-serif; box-shadow: 0 6px 20px rgb(0 0 0 / .35); pointer-events: none;
+    transform: translate(-4px, -50%); opacity: 0; transition: opacity .15s ease-out, transform .15s ease-out; }
+  .tune-help.on { opacity: 1; transform: translate(0, -50%); }
+  .tune-help b { display: block; margin-bottom: 2px; font-weight: 600; }
+  .tune-help span { display: block; margin-top: 4px; color: rgb(255 255 255 / .5); font-size: 11px; }
   #log { position: fixed; left: 12px; top: 12px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: rgb(255 255 255 / .55); pointer-events: none; }
 </style>
 </head>
@@ -130,6 +137,89 @@
       ] },
     ],
   });
+
+  // the tuner: marmit tuning marmit. Every dial drives the physics of every island on the page, this one included.
+  // Each group is a pill on the bar; its dials open in a panel, and each dial is itself a small inline marmit bar, so
+  // the sliders wobble with the values they set. Copy puts the physics on the clipboard, ready for `physics: {...}`.
+  const DIALS = {
+    Motion:   { stiffness: [20, 600, 5], damping: [1, 60, .5] },
+    Material: { blur: [0, 20, .5], stretch: [0, 2, .05], bend: [0, 1.5, .05], dent: [0, 8, .25], dentWidth: [4, 40, 1] },
+    Pull:     { reach: [0, 100, 1], pullBend: [0, 1.5, .05] },
+    Redock:   { arc: [0, 1, .05], corner: [0, 120, 1], lift: [0, 1, .05] },
+    Search:   { dropletGap: [0, 40, 1], string: [0, 30, 1] },
+    Panel:    { panelGap: [0, 30, 1], neck: [0, 60, 1] },
+  };
+  // what each dial does, shown when you hover it
+  const HELP = {
+    stiffness: 'How strongly everything springs toward where it is going. Higher is faster and snappier.',
+    damping: 'How quickly motion calms down. Low overshoots and wobbles; high settles without bouncing.',
+    blur: 'How much the shapes melt into each other (the goo). 0 turns the goo off and gives hard edges.',
+    stretch: 'How far the bar may stretch longer while it moves or is pulled. 0 keeps its length.',
+    bend: 'How soft the bar is in flight and while dragged: how far its ends lag and curve. 0 is rigid.',
+    dent: 'How deep the bar dips under a button while you press it, in px. 0 turns the dent off.',
+    dentWidth: 'How wide the press dent spreads along the bar, in px.',
+    reach: 'Pull (bars that can\'t be moved): how far you can pull before it stops giving, in px.',
+    pullBend: 'Pull: how much the bar bows toward your pointer, compared with how far you pulled.',
+    arc: 'Re-dock: how much a move between neighbouring sides curves toward their shared corner.',
+    corner: 'Re-dock: radius of the path the bar slides along when it wraps round a corner, in px.',
+    lift: 'Re-dock: how far the bar bows outward while it swings between sides.',
+    dropletGap: 'Search: gap between the open search bar and its close button droplet, in px.',
+    string: 'Search: thickness of the goo neck joining the bar and the close droplet. 0 lets it float free.',
+    panelGap: 'Menus and panels: gap between the bar and the panel that opens from it, in px. Never less than twice the blur, so values below that have no effect.',
+    neck: 'Menus and panels: thickness of the goo neck joining the panel to the bar, in px.',
+  };
+  const DEFAULTS = { stiffness: 410, damping: 36.5, blur: 7, stretch: 0, dent: 2.5, dentWidth: 16, bend: .3, reach: 32, pullBend: .4,
+    arc: .25, corner: 40, lift: .15, dropletGap: 14, string: 12, panelGap: 14, neck: 26 };
+  const phys = { ...DEFAULTS };
+  const fmt = n => String(+n.toFixed(2));
+  const applyPhysics = () => { for (const k in islands) islands[k].update({ physics: { ...phys } }); };
+  // hover help for the dials: a tooltip beside the open panel, level with the dial (panels clip anything inside them)
+  const help = document.createElement('div'); help.className = 'tune-help'; help.setAttribute('role', 'tooltip'); document.body.append(help);
+  let helpTimer;
+  function showHelp(row, key) {
+    clearTimeout(helpTimer);
+    helpTimer = setTimeout(() => {
+      const panel = row.closest('.mm-panel') ?? row, pr = panel.getBoundingClientRect(), rr = row.getBoundingClientRect();
+      help.innerHTML = `<b>${key}</b>${HELP[key]}<span>default ${fmt(DEFAULTS[key])}</span>`;
+      help.style.left = pr.right + 12 + 'px'; help.style.top = rr.top + rr.height / 2 + 'px'; help.classList.add('on');
+    }, help.classList.contains('on') ? 0 : 350);
+  }
+  function hideHelp() { clearTimeout(helpTimer); help.classList.remove('on'); }
+  // one panel's content: a column of inline islands, one slider each, built once when the panel first opens
+  const dialRows = dials => el => {
+    const col = document.createElement('div'); col.className = 'tune-dials';
+    col.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:4px 2px 2px';
+    el.append(col);
+    const made = Object.entries(dials).map(([key, [min, max, step]]) => {
+      const row = document.createElement('div'); col.append(row);
+      row.addEventListener('pointerenter', () => showHelp(row, key));
+      row.addEventListener('pointerleave', hideHelp);
+      return islands['dial:' + key] = createIsland({
+        mode: 'inline', container: row, label: key, physics: { ...phys },
+        theme: document.documentElement.style.colorScheme === 'light' ? 'light' : 'dark',
+        items: [{ type: 'slider', id: key, label: key, min, max, step, value: phys[key], width: 230, format: fmt,
+          onChange: v => { phys[key] = v; applyPhysics(); log(key, '=', v); } }],
+      });
+    });
+    return () => made.forEach(isl => { isl.destroy(); for (const k in islands) if (islands[k] === isl) delete islands[k]; });
+  };
+  islands.tuner = createIsland({
+    side: 'top', label: 'Physics tuner',
+    items: [
+      ...Object.entries(DIALS).map(([g, dials]) => ({ type: 'panel', id: 'tune-' + g, label: g, trigger: 'pill', title: g, content: dialRows(dials) })),
+      { type: 'separator' },
+      { type: 'button', id: 'reset', label: 'Reset to defaults', icon: 'undo', onClick: () => {
+        Object.assign(phys, DEFAULTS); applyPhysics();
+        for (const k in DEFAULTS) islands['dial:' + k]?.set(k, DEFAULTS[k]);
+        log('physics reset');
+      } },
+      { type: 'button', id: 'copy', label: 'Copy physics', icon: 'copy', onClick: () => {
+        const json = JSON.stringify(phys); navigator.clipboard?.writeText(json).catch(() => {}); log('copied', json);
+      } },
+    ],
+  });
+  // start every island on the tuner's values, so what you see always matches the dials
+  applyPhysics();
 </script>
 </body>
 </html>

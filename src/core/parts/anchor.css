@@ -1,0 +1,19 @@
+/* anchor: a 32px square of 3 × 3 cells on the bar; the highlight is moved by a spring in JS */
+.mm-anchor { display: grid; grid-template-columns: repeat(3, 9px); grid-template-rows: repeat(3, 9px); width: 32px; height: 32px; padding: 2.5px;
+  border-radius: 10px; background: var(--mm-tint); }
+.mm-anchor-hl { position: absolute; border-radius: 50%; background: var(--mm-accent); pointer-events: none;
+  transition: box-shadow .2s ease-out; }
+.mm-anchor-cell { position: relative; width: 9px; height: 9px; border: 0; padding: 0; background: none; display: grid; place-items: center; cursor: pointer; }
+.mm-anchor-cell:focus-visible { outline: none; }
+.mm-anchor-dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--mm-muted); opacity: .7; transition: opacity .15s ease-out, transform .15s ease-out; }
+.mm-anchor-cell:hover .mm-anchor-dot { opacity: 1; transform: scale(1.35); }
+.mm-anchor-cell[aria-checked=true] .mm-anchor-dot { opacity: 0; }
+.mm-anchor:has(.mm-anchor-cell:focus-visible) .mm-anchor-hl { box-shadow: 0 0 0 1.5px var(--mm-bar), 0 0 0 3px var(--mm-muted); }
+
+/* the big grid in a panel (display: 'panel'): 44px cells you can aim at, a hover tint per cell */
+.mm-anchor.big { position: relative; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); width: auto; height: auto; padding: 6px; border-radius: 16px; }
+.mm-anchor.big .mm-anchor-cell { width: 44px; height: 44px; border-radius: 10px; transition: background .15s ease-out; }
+.mm-anchor.big .mm-anchor-cell:hover { background: var(--mm-tint); }
+.mm-anchor.big .mm-anchor-dot { width: 5px; height: 5px; }
+.mm-anchor.big .mm-anchor-hl { z-index: 1; }
+.mm-anchor-out { color: var(--mm-ink); }

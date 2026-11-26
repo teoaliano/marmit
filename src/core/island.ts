@@ -4,16 +4,19 @@
 import { addSystem, clamp, crit, dip, isReduced, kick, outline, removeSystem, Spring, spineAt, spineHit, Stick, type Walls } from './physics';
 import { along, angAt, horiz, makeRoute, RN, slope, type Route, type RouteEnv } from './routes';
 import { createControl, h, isNative, itemKey, updateControl, type Ctl, type Ctx } from './controls';
+import { head } from './parts/dom';
 import { icons, stringSlot } from './icons';
 import { injectStyles, releaseStyles } from './styles';
-import type { IslandController, IslandItem, IslandOptions, Physics, Side, Slot, Theme } from './types';
+import type { IslandController, IslandItem, IslandOptions, Physics, Side, Slot, Theme, VisibleWhen } from './types';
 
 const H = 40, P = 4, G = 4, B = 32, N = 9;
+/** half the height of a panel's blob heading: the body starts this far below the panel's top */
+const HEAD_HALF = 14;
 const INF: Walls = [-1e9, -1e9, 1e9, 1e9];
 
 export const DEFAULT_PHYSICS: Physics = {
-  stiffness: 150, damping: 10, blur: 7, stretch: 0, dent: 2.5, dentWidth: 16, bend: .3, reach: 32, pullBend: .4,
-  arc: .25, corner: 40, lift: .15, dropletGap: 14, string: 12, panelGap: 10, neck: 26,
+  stiffness: 410, damping: 36.5, blur: 7, stretch: 0, dent: 2.5, dentWidth: 16, bend: .3, reach: 32, pullBend: .4,
+  arc: .25, corner: 40, lift: .15, dropletGap: 14, string: 12, panelGap: 14, neck: 26,
 };
 const THEME_VARS: Record<keyof Theme, string> = {
   bar: '--mm-bar', ink: '--mm-ink', accent: '--mm-accent', onAccent: '--mm-on-accent', success: '--mm-success',
@@ -38,7 +41,7 @@ export function createIsland(input: IslandOptions): IslandController {
   /* ---------------- DOM ---------------- */
   const gid = `mm-goo-${++seq}`;
   const root = h('div', 'mm', { 'data-mode': mode, role: 'toolbar' });
-  const defs = h('div'); defs.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="${gid}" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="7"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"/></filter></svg>`;
+  const defs = h('div'); defs.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="${gid}" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="7"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"/></filter><filter id="${gid}-h" x="-10%" y="-30%" width="120%" height="160%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3.5"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -11"/></filter></svg>`;
   const filterSvg = defs.firstElementChild as SVGSVGElement, blurEl = filterSvg.querySelector('feGaussianBlur')!;
   const goo = h('div', 'mm-goo', { 'aria-hidden': 'true' });
   goo.innerHTML = '<svg><path/></svg>';
@@ -71,7 +74,7 @@ export function createIsland(input: IslandOptions): IslandController {
   const prog = new Spring(1, .001), lead = new Spring(1, .001), ex = new Spring(), ey = new Spring();
   let route: Route | null = null, cx = 0, cy = 0, th = 0;
   // drag / pull
-  let press: { id: number; x0: number; y0: number; ox: number; oy: number } | null = null, dragging = false, dragKind: 'dock' | 'pull' = 'dock', grabA = 0;
+  let press: { id: number; x0: number; y0: number; ox: number; oy: number } | null = null, dragging = false, dragKind: 'dock' | 'pull' = 'dock', grabA = 0, pullS = 0;
   let samples: [number, number, number][] = [];
   const pox = new Spring(), poy = new Spring(), pbend = new Spring();
   // press dent
@@ -87,11 +90,21 @@ export function createIsland(input: IslandOptions): IslandController {
   const hide = new Spring(collapsed ? 1 : 0, .002), tabS = new Spring(collapsed ? 1 : 0, .002), lift = new Spring();
   // misc
   let kbd = false, gooOn = false, lastRoot = '';
+  // inline: when the element's box resizes, the page may move it (a centred parent re-centres it at once). The bar is
+  // drawn offset by that move and springs back, so it grows from where it was instead of jumping
+  const ancX = new Spring(), ancY = new Spring();
   const slots = new Map<string, SlotRec>();
 
   const K = () => ph.stiffness, Z = () => ph.damping / (2 * Math.sqrt(ph.stiffness));
   const hz = () => docked ? horiz(side) : !(o.side === 'left' || o.side === 'right');
-  const vis = () => ctls.filter(c => !c.cfg.hidden);
+  /** shown: not hidden, and its visibleWhen (if any) matches the current value of the item it watches */
+  const shown = (c: Ctl) => {
+    if (c.cfg.hidden) return false;
+    const w = c.cfg.visibleWhen as VisibleWhen | undefined; if (!w) return true;
+    const src = find(w.field), v = src?.value, any = (x: unknown) => (Array.isArray(x) ? x : [x]).some(y => y === v);
+    return w.is !== undefined ? any(w.is) : w.not !== undefined ? !any(w.not) : !!v;
+  };
+  const vis = () => ctls.filter(shown);
   const env: RouteEnv = { dockAt: d => dockAt(d), get arc() { return ph.arc; }, get corner() { return ph.corner; }, get lift() { return ph.lift; } };
 
   /* ---------------- slots ---------------- */
@@ -130,11 +143,16 @@ export function createIsland(input: IslandOptions): IslandController {
     emit(c, v) {
       c.cfg.onChange?.(v);
       if (c.cfg.id) o.onChange?.(c.cfg.id, v, values());
+      if (c.cfg.id && ctls.some(x => x.cfg.visibleWhen?.field === c.cfg.id)) ctls.forEach(flags);
       relayout();
     },
     action(c, entry) { o.onAction?.(c.cfg.id ?? c.key, entry); },
     relayout,
-    toggle(c) { if (openC === c) closePanel(true); else openPanel(c); },
+    toggle(c) {
+      if (openC === c && hoverC === c) { hoverC = null; return; }   // a click on a hover-opened panel pins it open
+      if (openC === c) closePanel(true); else openPanel(c);
+    },
+    hover(c, on) { hoverIntent(c, on); },
     closePanel,
     setSearch,
     angleOf: c => c.angle,
@@ -144,7 +162,7 @@ export function createIsland(input: IslandOptions): IslandController {
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => relayout()) : null;
   function measure(c: Ctl) { if (c.type !== 'search') c.w = c.fixedW ?? (c.el.offsetWidth || B); }
   function flags(c: Ctl) {
-    c.el.hidden = !!c.cfg.hidden;
+    c.el.hidden = !shown(c);
     c.el.classList.toggle('disabled', !!c.cfg.disabled);
     if (c.el instanceof HTMLButtonElement) c.el.disabled = !!c.cfg.disabled;
     if (c.cfg.disabled) c.el.setAttribute('aria-disabled', 'true'); else c.el.removeAttribute('aria-disabled');
@@ -155,8 +173,9 @@ export function createIsland(input: IslandOptions): IslandController {
     if (c.dent) pressable(c.el, () => c.u);
   }
   function destroyCtl(c: Ctl) {
-    if (openC === c || fromC === c) { openC = fromC = null; panelEl.style.display = 'none'; }
+    if (openC === c || fromC === c) { openC = fromC = null; panelEl.style.display = 'none'; root.classList.remove('mm-raised'); }
     if (sCtl === c) sCtl = null;
+    const fl = floats.get(c); if (fl) { fl.win.remove(); floats.delete(c); if (!floats.size) floatRoot.remove(); }
     ro?.unobserve(c.el); if (c.pc) ro?.unobserve(c.pc); c.el.remove(); c.pc?.remove(); sW.delete(c); dropSlots(c.key + '/'); c.destroy?.();
   }
   function setItems(items: IslandItem[]) {
@@ -164,19 +183,36 @@ export function createIsland(input: IslandOptions): IslandController {
     items.forEach((cfg, i) => {
       const key = itemKey(cfg, i);
       let c = old.get(key);
-      if (c && c.type === cfg.type) { old.delete(key); updateControl(c, cfg); }
+      if (c && c.type === cfg.type && (c.cfg as { variant?: string }).variant === (cfg as { variant?: string }).variant) { old.delete(key); updateControl(c, cfg); if (c.pc && (openC === c || floats.has(c))) panelHead(c); }
       else { if (c) { old.delete(key); destroyCtl(c); } c = createControl(key, cfg, ctx); setup(c); }
       flags(c); next.push(c);
     });
     old.forEach(destroyCtl);
     next.forEach((c, i) => { if (itemsWrap.children[i] !== c.el) itemsWrap.insertBefore(c.el, itemsWrap.children[i] ?? null); });
     ctls = next;
+    ctls.forEach(flags); // visibleWhen reads other items' values, which all exist only now
     relayout();
+  }
+  /** inline: the element takes the bar's size in the flow. Runs on relayout, before the next frame is drawn, so the
+      offset that keeps the bar in place applies from that very frame */
+  function sizeRoot() {
+    if (!docked) {
+      const t = L.LENt + (sCtl?.open ? ph.dropletGap + H : 0), sz = hz() ? `${t}x${H}` : `${H}x${t}`;
+      if (sz !== lastRoot) {
+        const first = !lastRoot, a = first ? null : root.getBoundingClientRect();
+        lastRoot = sz; root.style.width = px(hz() ? t : H); root.style.height = px(hz() ? H : t);
+        // keep the bar where it was on screen this frame; the offset then eases to 0 with the bar's own spring
+        if (a && !isReduced()) {
+          const b = root.getBoundingClientRect(); ancX.x += a.left - b.left; ancY.x += a.top - b.top; ancX.t = ancY.t = 0;
+          sim(0); settle(); render(); kick(); // redraw now: the box moved this frame, the drawing must not wait for the next
+        }
+      }
+    }
   }
   function relayout() {
     if (destroyed) return;
     ctls.forEach(measure);
-    layout();
+    layout(); sizeRoot();
     kick();
   }
 
@@ -275,7 +311,7 @@ export function createIsland(input: IslandOptions): IslandController {
     }
     c.open = open;
     c.el.classList.toggle('open', open); c.el.setAttribute('aria-expanded', String(open));
-    input.tabIndex = open ? 0 : -1; closeBtn.tabIndex = open ? 0 : -1; closeBtn.classList.toggle('on', open);
+    input.tabIndex = open ? 0 : -1; closeBtn.tabIndex = open ? 0 : -1; closeBtn.classList.toggle('shown', open);   // not 'on': that's a toggled button's pressed look
     if (open) input.focus({ preventScroll: true });
     else {
       if (input.value) { input.value = ''; c.value = ''; ctx.emit(c, ''); }
@@ -299,21 +335,25 @@ export function createIsland(input: IslandOptions): IslandController {
       const breadth = H_ ? pcw : pch, depth = H_ ? pch : pcw, [x0, y0, x1, y1] = bounds(), lo = H_ ? x0 : y0, hi = H_ ? x1 : y1;
       const barT = H_ ? bar.cx : bar.cy, want = barT + (At - barT) * .5, a = lo + breadth / 2 + 12, b = hi - breadth / 2 - 12;
       PT.t = a <= b ? clamp(want, a, b) : (lo + hi) / 2;
-      PE.t = An + pSign * (H / 2 + ph.panelGap); PB.t = breadth; PD.t = depth; NX.t = At;
+      // never closer than twice the blur: nearer than that, the goo half-bridges the bar's and panel's parallel edges
+      // and leaves a soft smudge along the gap
+      PE.t = An + pSign * (H / 2 + Math.max(ph.panelGap, ph.blur * 2)); PB.t = breadth; PD.t = depth; NX.t = At;
     } else { PT.t = At; PE.t = An - pSign * B / 2; PB.t = B; PD.t = B; NX.t = At; }
   }
   function measurePanel() { if (openC?.pc) { pcw = openC.pc.offsetWidth; pch = openC.pc.offsetHeight; } }
   function openPanel(c: Ctl) {
     if (!c.panel || collapsed || destroyed) return;
+    if (floats.has(c)) { raiseFloat(c); return; }   // detached: the trigger brings its window back instead
     if (sCtl?.open) setSearch(sCtl, false);
     hideTip();
-    panelEl.style.display = '';
+    panelEl.style.display = ''; root.classList.add('mm-raised'); // over neighbouring islands while a panel is out
     if (!c.pc) { c.pc = h('div', 'mm-pc'); panelEl.append(c.pc); c.panel.build(c.pc); ro?.observe(c.pc); }
+    panelHead(c);
     const wasClosed = !fromC;
     openC?.trigger?.setAttribute('aria-expanded', 'false');
     openC = fromC = c;
     pSign = docked ? (horiz(side) ? NORMALS[side][1] : NORMALS[side][0]) : inlineSign();
-    ctls.forEach(x => x.pc?.classList.toggle('on', x === c));
+    ctls.forEach(x => !floats.has(x) && x.pc?.classList.toggle('on', x === c));
     c.trigger?.setAttribute('aria-expanded', 'true');
     panelEl.classList.add('on');
     const focusEl = c.panel.onOpen?.(c.pc);
@@ -329,12 +369,122 @@ export function createIsland(input: IslandOptions): IslandController {
   function closePanel(focusTrigger = false) {
     if (!openC) return;
     const c = openC, hadFocus = panelEl.contains(document.activeElement);
-    openC = null;
+    openC = null; hoverC = null; clearTimeout(hoverT);
     c.pc?.classList.remove('on'); c.trigger?.setAttribute('aria-expanded', 'false'); panelEl.classList.remove('on');
     if ((focusTrigger || hadFocus) && hadFocus) c.trigger?.focus({ preventScroll: true });
     panelTargets();
     o.onOpenChange?.(null);
     kick();
+  }
+
+  /* ---------------- hover-opening panels ----------------
+     Open after a short rest on the trigger (at once if another hover panel is already out), stay open while the
+     pointer is on the trigger or the panel, close a moment after it leaves both. */
+  let hoverC: Ctl | null = null, hoverT: ReturnType<typeof setTimeout> | undefined;
+  function hoverIntent(c: Ctl, on: boolean) {
+    clearTimeout(hoverT);
+    if (on) {
+      if (openC === c) return;
+      if (openC && openC !== hoverC) return;   // a panel pinned or opened by click stays until clicked away
+      hoverT = setTimeout(() => { openPanel(c); if (openC === c) hoverC = c; }, hoverC ? 0 : 140);
+    } else if (hoverC === c) hoverT = setTimeout(() => { if (hoverC === c && openC === c) closePanel(); }, 260);
+  }
+  panelEl.addEventListener('pointerenter', () => { if (hoverC) clearTimeout(hoverT); });
+  panelEl.addEventListener('pointerleave', e => { if (hoverC && e.pointerType === 'mouse') hoverIntent(hoverC, false); });
+
+  /* ---------------- detached panels ----------------
+     The panel's own content moves into a floating window (so its state and listeners come along), while the panel
+     shell melts back into the bar. The window drags by its heading, minimises to the heading, docks back or closes. */
+  const floatRoot = h('div', 'mm mm-floats', { 'data-mode': 'float' });
+  const floats = new Map<Ctl, { win: HTMLElement; x: number; y: number }>();
+  const ib = (name: string, label: string, cls: string, on: () => void) => {
+    const b = h('button', 'mm-pact ' + cls, { type: 'button', 'aria-label': label, title: label });
+    b.innerHTML = `<span class="mm-ic">${icons[name]}</span>`;
+    b.addEventListener('click', e => { e.stopPropagation(); on(); });
+    b.addEventListener('pointerdown', e => e.stopPropagation());
+    return b;
+  };
+  /** every detachable panel gets a heading with its window buttons; one the control drew itself is reused */
+  function panelHead(c: Ctl) {
+    if (!c.pc || c.cfg.detachable === false || c.pc.querySelector('.mm-pacts')) return;   // (a rebuilt panel loses them)
+    let ph = c.pc.querySelector<HTMLElement>('.mm-ph');
+    if (!ph) { ph = head(typeof c.cfg.title === 'string' ? c.cfg.title : undefined, c.cfg.label ?? '')!; c.pc.prepend(ph); }
+    const acts = h('div', 'mm-pacts');
+    acts.append(ib('detach', 'Detach panel', 'dk', () => detach(c)), ib('minus', 'Minimise', 'fl', () => minimise(c)),
+      ib('dock', 'Dock back', 'fl', () => dock(c, true)), ib('close', 'Close', 'fl', () => dock(c, false)));
+    // the heading becomes two blobs on the panel's top edge, half outside it: the title on the left, everything else
+    // (a readout, the panel's own buttons, the window buttons) on the right
+    const [title, ...rest] = [...ph.childNodes], right = h('div', 'mm-ph-r');
+    right.append(...rest, acts);
+    if (title instanceof HTMLElement) title.classList.add('mm-ph-t'); else ph.prepend(h('span', 'mm-ph-t'));
+    ph.append(right); ph.classList.add('blobbed'); c.pc.classList.add('mm-pc-blob');
+    // their material: a body that starts at the heading's middle plus a blob behind each pill, melted by a tight goo
+    const bg = h('div', 'mm-pc-bg', { 'aria-hidden': 'true' }), body = h('i', 'b'), bt = h('i'), br = h('i');
+    bg.append(body, bt, br); bg.style.setProperty('--mm-head-goo', `url(#${gid}-h)`); c.pc.prepend(bg);
+    const lay = () => {
+      const t = ph!.querySelector<HTMLElement>('.mm-ph-t');
+      for (const [blob, el] of [[bt, t], [br, right]] as const) {
+        if (!el || !el.offsetWidth) { blob.style.display = 'none'; continue; }
+        blob.style.display = ''; blob.style.left = el.offsetLeft + 'px'; blob.style.top = el.offsetTop + 'px';
+        blob.style.width = el.offsetWidth + 'px'; blob.style.height = el.offsetHeight + 'px';
+      }
+      body.style.top = ph!.offsetTop + ph!.offsetHeight / 2 + 'px';
+    };
+    lay(); new ResizeObserver(lay).observe(c.pc); new ResizeObserver(lay).observe(right);
+    ph.addEventListener('pointerdown', e => dragFloat(c, e));
+  }
+  function syncFloatLook() {
+    floatRoot.dataset.theme = root.dataset.theme;
+    for (const v of [...Object.values(THEME_VARS), '--mm-z']) { const x = root.style.getPropertyValue(v); if (x) floatRoot.style.setProperty(v, x); else floatRoot.style.removeProperty(v); }
+  }
+  function placeFloat(f: { win: HTMLElement; x: number; y: number }) {
+    const w = f.win.offsetWidth, ht = f.win.offsetHeight;
+    f.x = clamp(f.x, 8 - w + 60, innerWidth - 60); f.y = clamp(f.y, 8, innerHeight - 40);
+    f.win.style.transform = `translate(${px(f.x)},${px(f.y)})`;
+    void ht;
+  }
+  function detach(c: Ctl) {
+    if (!c.pc || floats.has(c)) return;
+    const r = (openC === c ? panelEl : c.pc).getBoundingClientRect();
+    const win = h('div', 'mm-win', { role: 'dialog', 'aria-label': (typeof c.cfg.title === 'string' ? c.cfg.title : c.cfg.label) ?? 'Panel' });
+    // one object, not two: the shell under the panel goes away in this same frame (no retract into the bar) and the
+    // window takes its exact place at full opacity, then lifts a little, so the panel reads as picked up off the bar
+    if (openC === c) {
+      closePanel(); [PT, PE, PB, PD, NX].forEach(s => s.snap());
+      fromC = null; panelEl.style.display = 'none'; root.classList.remove('mm-raised'); kick();
+    }
+    win.append(c.pc); c.pc.classList.add('on');
+    syncFloatLook(); if (!floatRoot.isConnected) document.body.append(floatRoot);
+    floatRoot.append(win);
+    const f = { win, x: r.left, y: r.top }; floats.set(c, f); placeFloat(f);
+    c.el.classList.add('mm-detached');
+    win.classList.add('in', 'lift'); win.addEventListener('animationend', () => win.classList.remove('lift'), { once: true });
+    o.onDetachChange?.(c.cfg.id ?? c.key, true);
+  }
+  function raiseFloat(c: Ctl) {
+    const f = floats.get(c); if (!f) return;
+    f.win.classList.remove('min'); floatRoot.append(f.win);   // last child paints on top
+    f.win.classList.remove('flash'); void f.win.offsetWidth; f.win.classList.add('flash');
+  }
+  function minimise(c: Ctl) { floats.get(c)?.win.classList.toggle('min'); }
+  /** back into the bar: `reopen` docks it as the open panel; otherwise it's simply closed */
+  function dock(c: Ctl, reopen: boolean) {
+    const f = floats.get(c); if (!f || !c.pc) return;
+    floats.delete(c); c.el.classList.remove('mm-detached');
+    c.pc.classList.remove('on'); panelEl.append(c.pc); f.win.remove();
+    if (!floats.size) floatRoot.remove();
+    o.onDetachChange?.(c.cfg.id ?? c.key, false);
+    if (reopen) openPanel(c); else c.trigger?.focus({ preventScroll: true });
+  }
+  function dragFloat(c: Ctl, e: PointerEvent) {
+    const f = floats.get(c); if (!f || e.button) return;
+    if ((e.target as Element).closest('button, input, [role=slider], [role=spinbutton]')) return;
+    e.preventDefault(); raiseFloat(c); f.win.classList.remove('flash'); f.win.classList.add('dragging');
+    const x0 = e.clientX - f.x, y0 = e.clientY - f.y, el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+    const mv = (ev: PointerEvent) => { f.x = ev.clientX - x0; f.y = ev.clientY - y0; placeFloat(f); };
+    const up = () => { f.win.classList.remove('dragging'); el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
   }
 
   /* ---------------- collapse ---------------- */
@@ -409,6 +559,8 @@ export function createIsland(input: IslandOptions): IslandController {
     const p = local(e), u = spineHit(ns, p[0], p[1], H / 2 + 4); if (u < 0) return;
     dragKind = canDock ? 'dock' : 'pull';
     grabA = -L.SPAN / 2 + u * L.REST;
+    // where along the bar the pull grabbed (-1..1), kept short of the ends, which are held
+    if (dragKind === 'pull') pullS = clamp(grabA / (L.SPAN / 2), -.75, .75);
     const cs = Math.cos(th), sn = Math.sin(th);
     press = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ox: p[0] - (cx + grabA * cs), oy: p[1] - (cy + grabA * sn) };
     samples = [];
@@ -459,7 +611,9 @@ export function createIsland(input: IslandOptions): IslandController {
   /* ---------------- global listeners ---------------- */
   const onKey = (e: KeyboardEvent) => {
     kbd = true;
-    if (e.key === 'Escape' && openC) { e.preventDefault(); closePanel(true); }
+    // Escape closes the open panel, unless a control used it first (to cancel a drag, a scrub or an edit): those call
+    // preventDefault. So decide after the event has been through the page, not here in the capture phase.
+    if (e.key === 'Escape' && openC) setTimeout(() => { if (!e.defaultPrevented && openC && !destroyed) closePanel(true); }, 0);
   };
   const onDocDown = (e: PointerEvent) => {
     kbd = false;
@@ -516,14 +670,15 @@ export function createIsland(input: IslandOptions): IslandController {
       bx = cx - nx * out; by = cy - ny * out;
     } else {
       th = hz() ? 0 : Math.PI / 2;
-      cx = hz() ? L.LEN / 2 : H / 2; cy = hz() ? H / 2 : L.LEN / 2;
+      ancX.step(h_, k, c); ancY.step(h_, k, c);
+      cx = (hz() ? L.LEN / 2 : H / 2) + ancX.x; cy = (hz() ? H / 2 : L.LEN / 2) + ancY.x;
       bx = cx; by = cy;
     }
-    // pull: the middle bows toward the pointer while the ends hold back
+    // pull: the bar bows toward the pointer at the spot it was grabbed while the ends hold back (the bow is laid in
+    // settle, peaking under the grab)
     pox.step(h_, k, c); poy.step(h_, k, c); pbend.step(h_, k * 2, crit(k * 2, z));
     const pulling = dragKind === 'pull' && (dragging || !(pox.rest && poy.rest && pbend.rest));
-    const qx = -Math.sin(th), qy = Math.cos(th), b = pbend.x;
-    bar.aim(bx + pox.x + qx * b, by + poy.x + qy * b, th, -qx * b, -qy * b);
+    bar.aim(bx + pox.x, by + poy.x, th);
     bar.step(h_, pulling ? k * 8 : k * 1.2 / Math.max(.1, ph.bend), Math.min(z, 1), walls());
     dentStep(h_);
     // panels
@@ -536,7 +691,7 @@ export function createIsland(input: IslandOptions): IslandController {
   }
   function settle() {
     if (!ph.bend && !(dragKind === 'pull' && (dragging || !pbend.rest))) bar.snap();
-    bar.shape(ph.stretch, walls());
+    bar.shape(ph.stretch, walls(), dragKind === 'pull' ? pbend.x : 0, pullS);
     if (docked && !(dragging && dragKind === 'dock')) snake();
   }
   /* a slide lays the bar along its path like a train on a track: every point of it sits on the route, so it wraps the
@@ -565,7 +720,9 @@ export function createIsland(input: IslandOptions): IslandController {
   const px = (v: number) => v.toFixed(2) + 'px';
   function render() {
     const m = N - 1, dw = ph.dentWidth, dd = dent.x;
-    const path = outline(s => spineAt(ns, s * m, th), () => H / 2, Math.ceil(L.SPAN / 2.5), s => dip((s * m - dentU) * L.REST, dd, dw));
+    // a one-item bar has a spine shorter than a pixel, whose direction is rounding noise: use the bar's own angle
+    const at = (s: number): [number, number, number] => { const p = spineAt(ns, s * m, th); if (L.SPAN < 1) p[2] = th; return p; };
+    const path = outline(at, () => H / 2, Math.ceil(L.SPAN / 2.5), s => dip((s * m - dentU) * L.REST, dd, dw));
     cBar.setAttribute('d', path);
     // items ride the spine (and the dent)
     for (const c of vis()) {
@@ -597,13 +754,21 @@ export function createIsland(input: IslandOptions): IslandController {
           cString.setAttribute('transform', `translate(${ex0.toFixed(2)} ${ey0.toFixed(2)}) rotate(${(a * 180 / Math.PI).toFixed(3)})`);
         } else cString.style.display = 'none';
       } else {
-        drop.style.display = ''; drop2.style.display = 'none'; cString.style.display = 'none';
+        drop.style.display = ''; drop2.style.display = 'none';
         boxes.push([drop, dx - d / 2, dy - d / 2, d, d, d / 2]); wantGoo = true;
+        // the neck is there for the whole trip, thickening as the droplet arrives, so it never appears from nothing
+        // when the droplet lands (and thins away the same way when it goes back in)
+        const e = pop * pop * (3 - 2 * pop);
+        if (ph.string > 0 && D - d / 2 > H / 2 && e > .01) {
+          cString.style.display = '';
+          cString.setAttribute('d', neckPath(D, d, ph.string * e));
+          cString.setAttribute('transform', `translate(${ex0.toFixed(2)} ${ey0.toFixed(2)}) rotate(${(a * 180 / Math.PI).toFixed(3)})`);
+        } else cString.style.display = 'none';
       }
     } else { drop.style.display = 'none'; drop2.style.display = 'none'; cString.style.display = 'none'; closeBtn.style.display = 'none'; }
     // panel
     if (fromC && !openC && [PT, PE, PB, PD, NX].every(s => s.rest)) {
-      fromC = null; panelEl.style.display = 'none'; ctls.forEach(x => x.pc?.classList.remove('on'));
+      fromC = null; panelEl.style.display = 'none'; root.classList.remove('mm-raised'); ctls.forEach(x => !floats.has(x) && x.pc?.classList.remove('on'));
     }
     if (fromC) {
       const H_ = hz(), b = Math.max(0, PB.x), dp = Math.max(0, PD.x), sg = pSign;
@@ -611,8 +776,10 @@ export function createIsland(input: IslandOptions): IslandController {
       const [l, t, w, ht] = H_ ? [PT.x - b / 2, near, b, dp] : [near, PT.x - b / 2, dp, b];
       const r = Math.min(18, w / 2, ht / 2);
       panelEl.style.width = px(w); panelEl.style.height = px(ht); panelEl.style.borderRadius = px(r); panelEl.style.transform = `translate(${px(l)},${px(t)})`;
-      boxes.push([pBlob, l, t, w, ht, r]); grow(l, t, l + w, t + ht);
-      const An = H_ ? bar.cy : bar.cx, s0 = An + sg * (H / 2 - 6), s1 = PE.x + sg * 2, span = (s1 - s0) * sg, nw = ph.neck;
+      // a blob heading sits half outside the body: the shell (and a neck reaching down to it) starts at its middle
+      const hb = fromC.pc?.classList.contains('mm-pc-blob') ? Math.min(HEAD_HALF, ht / 2) : 0;
+      boxes.push([pBlob, l, t + hb, w, ht - hb, Math.min(r, (ht - hb) / 2)]); grow(l, t, l + w, t + ht);
+      const An = H_ ? bar.cy : bar.cx, s0 = An + sg * (H / 2 - 6), s1 = PE.x + sg * 2 + (H_ && sg > 0 ? hb : 0), span = (s1 - s0) * sg, nw = ph.neck;
       const t0 = (H_ ? l : t) + r + nw / 2, t1 = (H_ ? l + w : t + ht) - r - nw / 2, nxp = t0 <= t1 ? clamp(NX.x, t0, t1) : PT.x;
       if (span > 0) {
         const lo = Math.min(s0, s1);
@@ -654,17 +821,13 @@ export function createIsland(input: IslandOptions): IslandController {
       });
     }
     if (tipFor) placeTip();
-    // inline: the element takes the bar's size in the flow
-    if (!docked) {
-      const t = L.LENt + (sCtl?.open ? ph.dropletGap + H : 0), sz = hz() ? `${t}x${H}` : `${H}x${t}`;
-      if (sz !== lastRoot) { lastRoot = sz; root.style.width = px(hz() ? t : H); root.style.height = px(hz() ? H : t); }
-    }
+    sizeRoot();
   }
   /** the pinched neck from the bar's round end to the droplet, in a frame where the end cap sits at the origin */
-  function neckPath(D: number, d: number) {
+  function neckPath(D: number, d: number, thick = ph.string) {
     const R1 = H / 2, R2 = d / 2, a = 1, b = 1, f = (v: number) => v.toFixed(2);
     const p1x = R1 * Math.cos(a), p1y = R1 * Math.sin(a), p2x = D - R2 * Math.cos(b), p2y = R2 * Math.sin(b);
-    const half = Math.min(ph.string / 2, R1 * .9, R2 * .9), mx = (R1 + D - R2) / 2, L1 = (mx - p1x) * .55, L2 = (p2x - mx) * .55;
+    const half = Math.min(thick / 2, R1 * .9, R2 * .9), mx = (R1 + D - R2) / 2, L1 = (mx - p1x) * .55, L2 = (p2x - mx) * .55;
     const top = `C${f(p1x + L1 * Math.sin(a))} ${f(-(p1y - L1 * Math.cos(a)))} ${f(mx - L1 * .6)} ${f(-half)} ${f(mx)} ${f(-half)} C${f(mx + L2 * .6)} ${f(-half)} ${f(p2x - L2 * Math.sin(b))} ${f(-(p2y - L2 * Math.cos(b)))} ${f(p2x)} ${f(-p2y)}`;
     const bot = `C${f(p2x - L2 * Math.sin(b))} ${f(p2y - L2 * Math.cos(b))} ${f(mx + L2 * .6)} ${f(half)} ${f(mx)} ${f(half)} C${f(mx - L1 * .6)} ${f(half)} ${f(p1x + L1 * Math.sin(a))} ${f(p1y - L1 * Math.cos(a))} ${f(p1x)} ${f(p1y)}`;
     return `M0 -1 L${f(p1x)} ${f(-p1y)} ${top} L${f(D)} 0 L${f(p2x)} ${f(p2y)} ${bot} L0 1Z`;
@@ -676,7 +839,7 @@ export function createIsland(input: IslandOptions): IslandController {
       measurePanel();
       for (let i = 0; i < n; i++) sim(h_);
       settle(); render();
-      const springs = [prog, lead, ex, ey, pox, poy, pbend, dent, sOff, sD, hide, tabS, lift, ...sW.values()];
+      const springs = [prog, lead, ex, ey, pox, poy, pbend, dent, sOff, sD, hide, tabS, lift, ancX, ancY, ...sW.values()];
       if (fromC) springs.push(PT, PE, PB, PD, NX);
       return dragging || (!isReduced() && (!springs.every(s => s.rest) || !bar.still));
     },
@@ -694,13 +857,14 @@ export function createIsland(input: IslandOptions): IslandController {
     root.classList.toggle('mm-draggable', docked && o.draggable !== false);
     if (o.className) root.classList.add(...o.className.split(/\s+/).filter(Boolean));
     blurEl.setAttribute('stdDeviation', String(Math.max(0, ph.blur)));
+    if (floats.size) syncFloatLook();
   }
   function values() {
     const out: Record<string, unknown> = {};
     for (const c of ctls) if (c.hasValue && c.cfg.id) out[c.cfg.id] = c.value;
     return out;
   }
-  const find = (id: string) => ctls.find(c => c.cfg.id === id || c.key === id);
+  function find(id: string) { return ctls.find(c => c.cfg.id === id || c.key === id); }
 
   /* ---------------- start ---------------- */
   applyLook();
@@ -733,7 +897,7 @@ export function createIsland(input: IslandOptions): IslandController {
     get: <T,>(id: string) => find(id)?.value as T,
     set(id, v) {
       const c = find(id); if (!c || !c.hasValue) return;
-      c.value = v; c.apply(); relayout();
+      c.value = v; c.apply(); ctls.forEach(flags); relayout();
     },
     values,
     setSide: d => setSide(d),
@@ -746,7 +910,8 @@ export function createIsland(input: IslandOptions): IslandController {
     destroy() {
       if (destroyed) return;
       destroyed = true;
-      removeSystem(system); hideTip();
+      removeSystem(system); hideTip(); clearTimeout(hoverT);
+      floats.forEach(f => f.win.remove()); floats.clear(); floatRoot.remove();
       ro?.disconnect(); stageRO?.disconnect();
       removeEventListener('keydown', onKey, true);
       document.removeEventListener('pointerdown', onDocDown, true);

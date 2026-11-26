@@ -1,0 +1,70 @@
+/* gradient */
+/* a checkerboard under anything that may be see-through */
+.mm .mm-gchip, .mm .mm-gprev, .mm .mm-gsw, .mm .mm-ghandle {
+  --mm-check: repeating-conic-gradient(#d4d4d8 0 25%, #fff 0 50%) 0 0 / 8px 8px;
+}
+.mm-gchip { width: 16px; height: 16px; border-radius: 50%; flex: none; margin-left: -4px;
+  background: var(--g, #000), var(--mm-check); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); }
+.mm-btn > .mm-gchip { width: 18px; height: 18px; margin: 0; }
+
+.mm-gradient { width: 264px; display: flex; flex-direction: column; gap: 8px; }
+.mm-gseg { width: 100%; }
+.mm-gseg button { flex: 1; justify-content: center; padding: 0 8px; }
+
+.mm-gtools { display: flex; align-items: center; gap: 2px; height: 32px; }
+.mm-gfill { flex: 1; }
+.mm-gangle { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--mm-tint); }
+.mm-gangle[hidden] { display: none; }
+.mm-glab { color: var(--mm-muted); }
+.mm-gscrub { cursor: ew-resize; user-select: none; -webkit-user-select: none; touch-action: none; }
+.mm-gscrub:hover, .mm-gscrub.mm-scrubbing { color: var(--mm-ink); }
+.mm-gpos { display: inline-flex; align-items: baseline; font-variant-numeric: tabular-nums; }
+.mm-gpos-v { cursor: text; min-width: 2ch; text-align: right; border-radius: 4px; }
+.mm-gpos-v:focus-visible { outline-offset: 1px; }
+.mm-gpos .mm-num-input { text-align: right; }
+
+.mm-gbtn { width: 28px; height: 28px; flex: none; border: 0; padding: 0; border-radius: 50%; background: none; display: grid; place-items: center; cursor: pointer;
+  opacity: .75; transition: background .2s ease-out, opacity .2s ease-out, transform .15s ease-out; }
+.mm-gbtn:hover { background: var(--mm-tint); opacity: 1; }
+.mm-gbtn:active { transform: scale(.92); }
+.mm-gbtn:disabled { opacity: .25; pointer-events: none; }
+.mm-gbtn .mm-ic { width: 14px; height: 14px; }
+
+/* the stop bar: handles sit on the preview at their position, half above and half below it */
+.mm-gbar { position: relative; height: 28px; margin: 6px 0 4px; cursor: copy; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mm-gprev { position: absolute; inset: 0; border-radius: 8px; background: var(--g), var(--mm-check); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1); pointer-events: none; }
+.mm-ghandle { position: absolute; top: 50%; width: 14px; height: 34px; margin: -17px 0 0 -7px; border-radius: 7px; cursor: grab;
+  background: linear-gradient(var(--c), var(--c)), var(--mm-check); background-clip: padding-box;
+  border: 2.5px solid var(--mm-knob); box-shadow: 0 1px 4px rgb(0 0 0 / .4);
+  transition: transform .15s ease-out, opacity .15s ease-out, box-shadow .15s ease-out; }
+.mm-ghandle:hover { transform: scale(1.08); }
+.mm-ghandle.sel { box-shadow: 0 0 0 1.5px var(--mm-bar), 0 0 0 3px var(--mm-ink), 0 1px 4px rgb(0 0 0 / .4); z-index: 1; }
+.mm-ghandle:focus-visible { outline: none; }
+.mm-gbar.drag, .mm-gbar.drag .mm-ghandle { cursor: grabbing; }
+.mm-ghandle[data-off] { opacity: .3; transform: scale(.8); }
+
+/* one row per stop */
+.mm-gstops { display: flex; flex-direction: column; gap: 2px; }
+.mm-gstop { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 4px 0 2px; border-radius: 9px; background: var(--mm-bar);
+  transition: background .2s ease-out, transform .2s var(--mm-ease); }
+.mm-gstop:hover { background: color-mix(in oklch, var(--mm-ink) 5%, var(--mm-bar)); }
+.mm-gstop.sel { background: var(--mm-tint); }
+.mm-gstop.lift { transition: background .2s ease-out; z-index: 2; position: relative; box-shadow: 0 6px 16px var(--mm-shadow); background: color-mix(in oklch, var(--mm-ink) 14%, var(--mm-bar)); }
+.mm-gstops.lifting .mm-gstop { pointer-events: none; }
+.mm-gstops.lifting .mm-gstop.lift { pointer-events: auto; }
+
+.mm-ggrip { width: 14px; height: 24px; flex: none; border: 0; padding: 0; background: none; display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  align-items: center; cursor: grab; opacity: .35; touch-action: none; transition: opacity .2s ease-out; }
+.mm-ggrip i { width: 8px; height: 1.5px; border-radius: 1px; background: currentColor; }
+.mm-gstop:hover .mm-ggrip { opacity: .7; }
+.mm-gstop.lift .mm-ggrip { opacity: 1; cursor: grabbing; }
+
+.mm-gsw { position: relative; width: 20px; height: 20px; flex: none; border-radius: 50%; cursor: pointer; overflow: hidden;
+  background: linear-gradient(var(--c), var(--c)), var(--mm-check); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); }
+.mm-gsw input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.mm-ghex { all: unset; flex: 1; min-width: 0; height: 24px; padding: 0 6px; border-radius: 6px; font: inherit; color: var(--mm-ink);
+  text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+.mm-ghex:hover { background: var(--mm-tint); }
+.mm-ghex:focus { background: var(--mm-tint); text-overflow: clip; }
+.mm-gstop .mm-gpos { width: 44px; justify-content: flex-end; flex: none; }
+.mm-gstop .mm-gbtn { width: 24px; height: 24px; }

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>marmit showcase</title>
+<style>
+  :root { color-scheme: dark; --bg: #2a2d33; --bg-2: #24272c; --ink: #fff; --muted: rgb(255 255 255 / .55); --faint: rgb(255 255 255 / .32);
+    --line: rgb(255 255 255 / .08); --card: rgb(255 255 255 / .035); --hi: #8ab4ff; --mono: 11px/1.45 ui-monospace, Menlo, monospace; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
+  html { scroll-padding-top: 16px; }
+  .layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+
+  /* sticky index */
+  .toc { position: sticky; top: 0; height: 100vh; overflow: auto; padding: 20px 10px 40px 16px; border-right: 1px solid var(--line); background: var(--bg-2); box-sizing: border-box; scrollbar-width: thin; }
+  .toc h1 { font-size: 14px; font-weight: 600; margin: 0 0 2px 8px; }
+  .toc .sub { margin: 0 0 14px 8px; color: var(--faint); font: var(--mono); }
+  .toc .grp { margin: 14px 0 4px 8px; font: 600 10px/1.4 -apple-system, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .toc a { display: block; padding: 3px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 12.5px; }
+  .toc a:hover { color: var(--ink); background: rgb(255 255 255 / .05); }
+  .toc a.on { color: var(--ink); background: rgb(255 255 255 / .09); }
+  .toc a small { color: var(--faint); font: var(--mono); margin-left: 4px; }
+
+  main { padding: 28px 36px 240px; max-width: 1100px; box-sizing: border-box; }
+  .grp-head { margin: 36px 0 4px; padding-top: 8px; font-size: 20px; font-weight: 600; }
+  .grp-head + p { margin: 0 0 8px; color: var(--muted); max-width: 680px; }
+
+  /* one component */
+  .sc { border-top: 1px solid var(--line); padding: 22px 0 8px; }
+  .sc h2 { font-size: 15px; font-weight: 600; margin: 0; display: flex; align-items: baseline; gap: 10px; }
+  .sc h2 code { font: var(--mono); color: var(--faint); font-weight: 400; }
+  .sc > p { margin: 3px 0 14px; color: var(--muted); max-width: 680px; }
+  .sc h3 { font: 600 10px/1.4 -apple-system, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin: 16px 0 8px; }
+  .sc .stage { min-height: 96px; border-radius: 14px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 28px 16px; position: relative; }
+  .sc .out { font: var(--mono); color: var(--muted); text-align: center; white-space: pre-wrap; word-break: break-all; margin-top: 6px; }
+  .sc .cap { font: var(--mono); color: var(--muted); margin: 0 0 -10px; }
+
+  /* specimens: clones of real parts, laid out statically on a bar-coloured plate */
+  .grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .card { border-radius: 12px; background: var(--card); padding: 14px 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 96px; }
+  .card .lab { font: var(--mono); color: var(--muted); text-align: center; }
+  .card .lab small { display: block; color: var(--faint); }
+  .mm.spec { position: relative; inset: auto; z-index: auto; display: inline-flex; align-items: center; gap: 4px; pointer-events: none; }
+  .mm.spec.plate { background: var(--mm-bar); border-radius: 999px; padding: 4px; min-height: 40px; box-sizing: border-box; box-shadow: 0 8px 14px var(--mm-shadow); }
+  .mm.spec.plate.sq { border-radius: 14px; }
+  .mm.spec.bare { background: none; }
+  .mm.spec .mm-item { position: relative !important; left: auto; top: auto; transform: none !important; will-change: auto; }
+  .mm.spec .mm-panel { position: relative; transform: none !important; width: auto !important; height: auto !important; display: block !important; border-radius: 18px !important; pointer-events: none; }
+  .mm.spec .mm-pc { position: relative; left: auto; top: auto; translate: none; opacity: 1 !important; filter: none !important; transform: none !important; visibility: visible !important; transition: none !important; }
+  .mm.spec .mm-tip { position: relative; transform: none !important; opacity: 1; }
+  .mm.spec .mm-close { position: relative; transform: none !important; opacity: 1 !important; display: grid !important; }
+
+  /* foundations */
+  .tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+  .tok { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--card); font: var(--mono); color: var(--muted); }
+  .tok .sw { width: 34px; height: 34px; border-radius: 8px; flex: none; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .12); }
+  .tok b { display: block; color: var(--ink); font-weight: 500; }
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .icons .card { min-width: 0; padding: 12px 6px 8px; }
+  .kv { font: var(--mono); color: var(--muted); display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+  .kv b { color: var(--ink); font-weight: 500; }
+  .topbar { position: fixed; right: 16px; top: 14px; z-index: 10; display: flex; gap: 8px; align-items: center; }
+  .theme-switch, .tweaks { font: var(--mono); color: var(--muted); background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+  .theme-switch { cursor: pointer; }
+  .tweaks { display: flex; gap: 8px; align-items: center; padding: 3px 4px 3px 10px; }
+  .tweaks b { font-weight: 400; }
+  .tweaks.has { border-color: rgb(138 180 255 / .5); } .tweaks.has b { color: var(--hi); }
+  .tweaks button { font: inherit; color: var(--ink); background: rgb(255 255 255 / .07); border: 0; border-radius: 999px; padding: 2px 9px; cursor: pointer; }
+  .tweaks button:hover { background: rgb(255 255 255 / .14); }
+  .tweaks:not(.has) button { opacity: .45; pointer-events: none; }
+
+  .tok input { width: 100%; min-width: 0; box-sizing: border-box; font: var(--mono); color: var(--ink); background: rgb(255 255 255 / .05); border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; }
+  .tok input:hover { border-color: var(--line); }
+  .tok input:focus { outline: none; border-color: var(--hi); background: rgb(255 255 255 / .08); }
+  .tok.tw input { border-color: rgb(138 180 255 / .55); color: var(--hi); }
+  .cmp { color: var(--faint); font: var(--mono); font-size: 10px; margin: 0 0 4px 2px; white-space: nowrap; }
+  .tok { align-items: flex-start; }
+  .tokinfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } .toc { position: static; height: auto; } .anat { grid-template-columns: 1fr; } main { padding: 20px 16px 200px; } }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="tweaks" id="tweaksBar"><b>no tweaks</b><button type="button" data-a="copy">copy</button><button type="button" data-a="reset">reset</button></div><button class="theme-switch" id="themeSwitch" type="button">specimens: dark</button></div>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="Components">
+    <h1>marmit</h1>
+    <p class="sub">components, atom by atom</p>
+  </nav>
+  <main id="main"></main>
+</div>
+<script src="../dist/vanilla/browser.global.js"></script>
+<script>
+  /* Two kinds of sections share this page:
+     - CATALOG.add({...}) entries (showcase/catalog.js): one component taken apart — anatomy, parts, states, live.
+     - SHOWCASE.add({ id, title, desc, mount(stage, out) }) sections (the other showcase/*.js files): assembled,
+       interactive compositions. mount builds islands into the stage; out(value) prints under it. */
+  window.SHOWCASE = { islands: [], sections: [], add(s) { this.sections.push(s); } };
+  window.CATALOG = { entries: [], groups: [], add(e) { this.entries.push(e); }, group(id, title, desc) { this.groups.push({ id, title, desc }); } };
+</script>
+<script src="showcase/tweaks.js"></script>
+<script src="showcase/catalog.js"></script>
+<!-- compositions: one file per section; order here is the order on the page -->
+<script src="showcase/basics.js"></script>
+<script src="showcase/slider.js"></script>
+<script src="showcase/fields.js"></script>
+<script src="showcase/anchor.js"></script>
+<script src="showcase/pad.js"></script>
+<script src="showcase/transition.js"></script>
+<script src="showcase/color.js"></script>
+<script src="showcase/gradient.js"></script>
+<script src="showcase/visible-when.js"></script>
+<script src="showcase/render.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+/* transition: an easing / spring editor. Heading with copy / paste, mode tabs, the curve, its numbers, presets. */
+.mm-tr { width: 248px; }
+.mm-tr .mm-ph { align-items: center; padding-bottom: 6px; }
+.mm-tr-acts { display: flex; gap: 2px; margin: -6px -4px -6px 0; }
+.mm-tr-act { width: 24px; height: 24px; border: 0; padding: 0; border-radius: 7px; background: none; display: grid; place-items: center; cursor: pointer; color: var(--mm-muted);
+  transition: background .2s ease-out, color .2s ease-out; }
+.mm-tr-act:hover { background: var(--mm-tint); color: var(--mm-ink); }
+.mm-tr-act:disabled { opacity: .35; pointer-events: none; }
+.mm-tr-act.done { color: var(--mm-success); }
+.mm-tr-act .mm-ic { width: 13px; height: 13px; }
+.mm-tr-body { max-height: 400px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; display: flex; flex-direction: column; gap: 6px; }
+.mm-tr-body::-webkit-scrollbar { display: none; }
+.mm-tr-top { display: flex; align-items: center; gap: 6px; }
+.mm-tr-top .mm-tr-acts { margin: 0; }
+.mm-tr-seg { flex: 1; height: 28px; }
+.mm-tr-seg button { flex: 1; justify-content: center; padding: 0 8px; font-size: 12px; }
+.mm-tr-seg button[hidden], .mm-tr-seg[hidden] { display: none; }
+
+/* the stage: the same box for the bézier editor and the spring preview, so switching tabs doesn't jump */
+.mm-tr-stage { position: relative; aspect-ratio: 248 / 144; border-radius: 10px; background: var(--mm-tint); margin-top: 2px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mm-tr-stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mm-tr-stage.ease .mm-tr-sp, .mm-tr-stage:not(.ease) .mm-tr-bz, .mm-tr-stage:not(.ease) .mm-tr-h { display: none; }
+.mm-tr-box { fill: none; stroke: var(--mm-line); stroke-width: 1; }
+.mm-tr-grid { fill: none; stroke: var(--mm-line); stroke-width: 1; opacity: .6; }
+.mm-tr-diag { stroke: var(--mm-track); stroke-width: 1; stroke-dasharray: 3 4; }
+.mm-tr-mark { stroke: var(--mm-muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: .6; }
+.mm-tr-tan { stroke: var(--mm-muted); stroke-width: 1.25; }
+.mm-tr-curve { fill: none; stroke: var(--mm-accent); stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+.mm-tr-end { fill: var(--mm-muted); }
+.mm-tr-h { position: absolute; width: 22px; height: 22px; translate: -50% -50%; border: 0; padding: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; }
+.mm-tr-h::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--mm-bar); box-shadow: inset 0 0 0 2px var(--mm-accent); transition: transform .15s ease-out; }
+.mm-tr-h:hover::after { transform: scale(1.2); }
+.mm-tr-h.drag { cursor: grabbing; }
+.mm-tr-h.drag::after { transform: scale(1.3); background: var(--mm-accent); }
+.mm-tr-h:focus-visible { outline: none; }
+.mm-tr-h:focus-visible::after { box-shadow: inset 0 0 0 2px var(--mm-accent), 0 0 0 2.5px var(--mm-bar), 0 0 0 4px var(--mm-muted); }
+
+/* X1 Y1 X2 Y2 */
+.mm-tr-g { display: flex; flex-direction: column; gap: 2px; }
+.mm-tr-g[hidden], .mm-tr-row[hidden], .mm-tr-pb[hidden] { display: none; }
+.mm-tr-fields { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-bottom: 2px; }
+.mm-tr-f { display: flex; align-items: center; gap: 2px; height: 28px; padding: 0 6px 0 5px; min-width: 0; border-radius: 8px; background: var(--mm-tint); font-size: 12px; cursor: ew-resize;
+  transition: background .2s ease-out; }
+.mm-tr-f:hover, .mm-tr-f:focus-within, .mm-tr-f.mm-scrubbing { background: var(--mm-tint-2); }
+.mm-tr-f:focus-within { cursor: text; }
+.mm-tr-fl { color: var(--mm-muted); font-size: 9.5px; flex: none; }
+.mm .mm-tr-in { all: unset; flex: 1; min-width: 0; width: 100%; text-align: right; font: inherit; font-size: 11.5px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; color: var(--mm-ink); cursor: inherit; }
+
+/* slider rows: label, marmit track, value */
+.mm-tr-row { display: grid; grid-template-columns: 64px 1fr 46px; align-items: center; gap: 10px; height: 30px; padding: 0 2px 0 4px; font-size: 12px; }
+.mm-tr-l { color: var(--mm-muted); }
+.mm-tr-v { font-variant-numeric: tabular-nums; text-align: right; cursor: text; }
+.mm-tr-v + .mm-num-input { text-align: right; min-width: 0; width: 100%; }
+.mm-tr .mm-slider { height: 30px; }
+.mm-tr .mm-slider:not(.drag) .mm-fill { transition: width .2s var(--mm-ease); }
+.mm-tr .mm-slider:not(.drag) .mm-knob { transition: left .2s var(--mm-ease), transform .15s ease-out; }
+.mm-tr-ro .mm-tr-note { color: var(--mm-muted); font-size: 11px; text-align: right; }
+.mm-tr-ro .mm-tr-v { cursor: default; }
+
+/* presets */
+.mm-tr-ph { height: 30px; padding: 0 6px 0 4px; font-size: 12px; margin-top: 2px; }
+.mm-tr-ph .mm-rl { color: var(--mm-muted); }
+.mm-tr-meta { color: var(--mm-ink); }
+.mm-tr .mm-tr-chev { width: 12px; height: 12px; opacity: .6; transition: transform .3s var(--mm-ease); }
+.mm-tr-ph[aria-expanded=true] .mm-tr-chev { transform: rotate(180deg); }
+.mm-tr-pb { display: flex; flex-direction: column; gap: 4px; }
+.mm-tr-tabs { flex: none; height: 26px; }
+.mm-tr-list { display: flex; flex-direction: column; gap: 1px; max-height: 196px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.mm-tr-list::-webkit-scrollbar { display: none; }
+.mm-tr-pi { position: relative; flex: none; }
+.mm-tr-pick { display: flex; align-items: center; gap: 9px; width: 100%; height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: none; cursor: pointer; font-size: 12px; text-align: left; }
+.mm-tr-pick:hover, .mm-tr-pick:focus-visible { background: var(--mm-tint); outline: none; }
+.mm-tr-pick .mm-rl { flex: 1; }
+.mm-tr-pick .mm-check { width: 12px; height: 12px; opacity: 0; }
+.mm-tr-pick[aria-selected=true] .mm-check { opacity: 1; }
+.mm-tr-pi:has(.mm-tr-del) .mm-tr-pick { padding-right: 34px; }
+.mm-tr-thumb { width: 28px; height: 16px; flex: none; }
+.mm-tr-thumb path { fill: none; stroke: var(--mm-muted); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.mm-tr-pick[aria-selected=true] .mm-tr-thumb path { stroke: var(--mm-ink); }
+.mm-tr-del { position: absolute; right: 4px; top: 4px; width: 20px; height: 20px; border: 0; padding: 0; border-radius: 6px; background: none; display: grid; place-items: center;
+  color: var(--mm-muted); cursor: pointer; opacity: 0; transition: opacity .15s ease-out, background .2s ease-out, color .2s ease-out; }
+.mm-tr-pi:hover .mm-tr-del, .mm-tr-del:focus-visible { opacity: 1; }
+.mm-tr-del:hover { background: var(--mm-tint); color: var(--mm-danger); }
+.mm-tr-del .mm-ic { width: 12px; height: 12px; }
+.mm-tr-save { height: 28px; border: 0; border-radius: 8px; background: var(--mm-tint); cursor: pointer; font-size: 12px; transition: background .2s ease-out; }
+.mm-tr-save:hover { background: var(--mm-tint-2); }
+.mm-tr-save:disabled { cursor: default; background: none; color: var(--mm-muted); }
+.mm-tr-pick .mm-check { margin-right: 0; }
+
+/* the bar trigger's tiny curve */
+.mm-tr-glyph svg path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.mm-pill:has(.mm-tr-glyph) { font-variant-numeric: tabular-nums; }

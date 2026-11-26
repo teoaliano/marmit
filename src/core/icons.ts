@@ -12,6 +12,8 @@ export const icons: Record<string, string> = {
   more: fill('<circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="11" cy="7" r="1.3"/>'),
   close: s('<path d="m3.5 3.5 7 7M10.5 3.5l-7 7"/>', 1.8),
   chevron: s('<path d="M4 5.5 7 8.5l3-3"/>', 1.8),
+  detach: s('<path d="M8.5 2H12v3.5M12 2 7 7M10 8.5v2.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h2.5"/>', 1.5),
+  dock: s('<path d="M5.5 12H2V8.5M2 12l5-5M4 5.5V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8.5"/>', 1.5),
   check: s('<path d="m3 7.2 2.6 2.6L11 4.4"/>', 1.8),
   comment: s('<path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h7A1.5 1.5 0 0 1 12 3.5v5A1.5 1.5 0 0 1 10.5 10H6l-3 2.5V10h.5A1.5 1.5 0 0 1 2 8.5z"/>', 1.5),
   invite: s('<circle cx="6" cy="4.5" r="2.3"/><path d="M1.8 12.2c.5-2.3 2.2-3.5 4.2-3.5s2.6.6 3.2 1.4M11 8.5v4M9 10.5h4"/>', 1.5),

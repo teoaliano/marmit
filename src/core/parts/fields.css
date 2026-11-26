@@ -1,0 +1,26 @@
+/* fields */
+.mm .mm-fields { display: flex; align-items: center; gap: 6px; height: 32px; }
+.mm .mm-flds { display: flex; align-items: center; gap: 4px; }
+/* a field pill is a full 32px item, like every other control: the bar's 4px inset is then the same on all four sides,
+   and the pill's own inset (12px) is the same at both ends */
+.mm .mm-fld { position: relative; display: flex; align-items: center; height: 32px; box-sizing: border-box; padding-right: 12px; border-radius: 999px;
+  background: var(--mm-tint); font-variant-numeric: tabular-nums; white-space: nowrap; transition: background .2s ease-out; }
+.mm .mm-fld:hover, .mm .mm-fld:focus-within { background: var(--mm-tint-2); }
+.mm .mm-fld:has(.mm-fld-v:focus-visible) { outline: 1.5px solid var(--mm-muted); outline-offset: 2px; }
+/* the letter is the scrub handle: a wide hit area at the field's left end */
+.mm .mm-fld-ax { flex: none; align-self: stretch; display: flex; align-items: center; padding: 0 6px 0 12px; font-size: 11px;
+  color: var(--mm-muted); cursor: ew-resize; user-select: none; -webkit-user-select: none; transition: color .15s ease-out; }
+.mm .mm-fld-ax:hover, .mm .mm-fld-ax.mm-scrubbing { color: var(--mm-ink); }
+.mm .mm-fld-v { flex: 1; min-width: 0; overflow: hidden; text-overflow: clip; cursor: text; }
+.mm .mm-fld-v:focus-visible { outline: none; }
+.mm .mm-fields-link { width: 32px; height: 32px; }
+.mm .mm-fields-link:not(.on) { opacity: .5; }
+.mm .mm-fields-link:not(.on):hover { opacity: 1; }
+
+/* slider: the value you can click to type, and the glide after a plain click */
+.mm .mm-value.mm-editable { cursor: text; border-radius: 6px; transition: background .15s ease-out, box-shadow .15s ease-out; }
+.mm .mm-value.mm-editable:hover { background: var(--mm-tint); box-shadow: 0 0 0 3px var(--mm-tint); }
+.mm .mm-value:focus-visible { outline: none; }
+.mm .mm-labeled > .mm-num-input { min-width: 34px; text-align: center; }
+.mm .mm-slider.glide .mm-fill { transition: width .3s var(--mm-ease); }
+.mm .mm-slider.glide .mm-knob { transition: left .3s var(--mm-ease), transform .15s ease-out; }

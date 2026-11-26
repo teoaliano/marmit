@@ -1,0 +1,26 @@
+/* pad: a square surface with a faint 6 × 6 grid and a point, then the X / Y value fields */
+.mm-pad { position: relative; border-radius: 10px; background: var(--mm-tint); cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mm-pad:focus-visible { outline: 1.5px solid var(--mm-muted); outline-offset: 2px; }
+.mm-pad-clip { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.mm-pad-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mm-pad-grid path { stroke: var(--mm-line); stroke-width: 1; fill: none; }
+.mm-pad-guides { position: absolute; width: 0; height: 0; pointer-events: none; }
+.mm-pad-guides::before, .mm-pad-guides::after { content: ""; position: absolute; background: var(--mm-accent); opacity: .16; transition: opacity .2s ease-out; }
+.mm-pad-guides::before { left: -.5px; width: 1px; top: -400px; bottom: -400px; }
+.mm-pad-guides::after { top: -.5px; height: 1px; left: -400px; right: -400px; }
+.mm-pad.drag .mm-pad-guides::before, .mm-pad.drag .mm-pad-guides::after { opacity: .32; }
+.mm-pad-dot { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--mm-accent); pointer-events: none;
+  box-shadow: 0 0 0 2px var(--mm-bar), 0 2px 8px rgb(0 0 0 / .35); cursor: grab; transition: transform .15s ease-out; }
+.mm-pad:hover .mm-pad-dot { transform: scale(1.1); }
+.mm-pad.drag .mm-pad-dot { transform: scale(1.2); }
+.mm-pad-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 176px; margin-top: 8px; }
+.mm-pad-field { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px; border-radius: 8px; background: var(--mm-tint); font-size: 12px; cursor: text;
+  transition: background .2s ease-out; }
+.mm-pad-field:hover, .mm-pad-field:focus-within { background: var(--mm-tint-2); }
+.mm-pad-lab { color: var(--mm-muted); flex: none; padding-right: 4px; transition: color .15s ease-out; }
+.mm-pad-scrub { cursor: ew-resize; }
+.mm-pad-scrub:hover, .mm-pad-scrub.mm-scrubbing { color: var(--mm-ink); }
+.mm .mm-pad-in { all: unset; flex: 1; min-width: 0; width: 0; text-align: right; font: inherit; font-variant-numeric: tabular-nums; color: var(--mm-ink); }
+.mm-pad-field .mm-unit { flex: none; }
+.mm-pad-field .mm-unit.sym { margin-left: -4px; }
+.mm-pad-mini circle { transition: cx .3s var(--mm-ease), cy .3s var(--mm-ease); }
