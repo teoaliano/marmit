@@ -269,7 +269,7 @@
 
   C.add({ group: 'panel', id: 'panel', name: 'Custom panel', code: "type: 'panel'",
     desc: 'A trigger whose panel holds anything you render into it (here: a small form of other marmit bars).',
-    variants: [{ type: 'panel', label: 'Settings', icon: 'settings', title: 'Settings', content: '<div style="padding:4px 2px;width:180px;color:var(--mm-muted)">Any content: a node, a string, or a render function.</div>' }],
+    variants: [{ type: 'panel', label: 'Settings', icon: 'settings', title: 'Settings', content: el => { el.innerHTML = '<div style="padding:4px 2px;width:180px;color:var(--mm-muted)">Any content: a node, a string, or a render function.</div>'; } }],
     parts: [[':scope', 'Trigger']], states: [{ name: 'default' }, { name: 'open', force: [['@aria-expanded=true']] }],
     panel: { parts: [['.mm-ph', 'Heading'], ['.mm-custom', 'Your content']] },
     live: [{ type: 'panel', id: 'set', label: 'Settings', icon: 'settings', title: 'Settings', content: el => { el.textContent = 'Anything goes in here.'; el.style.cssText = 'padding:4px 2px;width:180px;color:var(--mm-muted)'; } }] });
@@ -303,7 +303,7 @@
     custom(wrap, { el }) {
       const stage = el('div', 'stage'); stage.style.minHeight = '300px'; stage.style.justifyContent = 'flex-start'; wrap.append(stage);
       const host = el('div'); stage.append(host);
-      const isl = Marmit.createIsland({ mode: 'inline', container: host, label: 'Panel shell', items: [{ type: 'button', label: 'Undo', icon: 'undo' }, { type: 'menu', id: 'm', label: 'View', trigger: 'pill', items: [{ label: 'Zoom in', icon: 'zoomIn', shortcut: '⌘+' }, { label: 'Zoom out', icon: 'zoomOut', shortcut: '⌘−' }, 'separator', { label: 'Show grid', checked: true }] }, { type: 'button', label: 'More', icon: 'more' }] });
+      const isl = Marmit.createIsland({ mode: 'inline', container: host, label: 'Panel shell', panelDirection: 'bottom', items: [{ type: 'button', label: 'Undo', icon: 'undo' }, { type: 'menu', id: 'm', label: 'View', trigger: 'pill', items: [{ label: 'Zoom in', icon: 'zoomIn', shortcut: '⌘+' }, { label: 'Zoom out', icon: 'zoomOut', shortcut: '⌘−' }, 'separator', { label: 'Show grid', checked: true }] }, { type: 'button', label: 'More', icon: 'more' }] });
       SHOWCASE.islands.push(isl);
       setTimeout(() => isl.open('m'), 400);
       wrap.append(el('p', 'out', 'Opened on load. Click outside to close, click View to reopen.'));
