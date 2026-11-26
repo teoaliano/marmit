@@ -1,9 +1,9 @@
-/* islandkit/element — a custom element, for any stack that renders HTML (Angular, Astro, HTMX, Rails, Django, Lit…).
+/* marmit/element — a custom element, for any stack that renders HTML (Angular, Astro, HTMX, Rails, Django, Lit…).
 
-   <island-kit side="bottom" collapsible></island-kit>
-   <script> document.querySelector('island-kit').options = { items: [...] } </script>
+   <marmit-bar side="bottom" collapsible></marmit-bar>
+   <script> document.querySelector('marmit-bar').options = { items: [...] } </script>
 
-   Options can also come from a JSON child:  <island-kit><script type="application/json">{"items":[…]}</script></island-kit>
+   Options can also come from a JSON child:  <marmit-bar><script type="application/json">{"items":[…]}</script></marmit-bar>
    Events: change {id, value, values} · action {id, entry} · sidechange {side} · openchange {id} · collapsechange {collapsed} */
 import { createIsland } from '../core/island';
 import type { IslandController, IslandOptions, Side } from '../core/types';
@@ -45,7 +45,7 @@ export class IslandElement extends Base {
     for (const b of BOOLS) if (this.hasAttribute(b)) fromAttrs[b] = a(b) !== 'false';
     const json = this.querySelector(':scope > script[type="application/json"]');
     let parsed: Partial<IslandOptions> = {};
-    if (json?.textContent?.trim()) { try { parsed = JSON.parse(json.textContent); } catch (err) { console.error('[islandkit] bad JSON options', err); } }
+    if (json?.textContent?.trim()) { try { parsed = JSON.parse(json.textContent); } catch (err) { console.error('[marmit] bad JSON options', err); } }
     const fire = (type: string, detail: unknown) => this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
     const user = this.opts;
     return {
@@ -67,9 +67,9 @@ export class IslandElement extends Base {
   attributeChangedCallback() { this.ctl?.update(this.collect()); }
 }
 
-/** Registers <island-kit> (or your own tag name). Safe to call more than once. */
-export function defineIslandElement(tag = 'island-kit') {
+/** Registers <marmit-bar> (or your own tag name). Safe to call more than once. */
+export function defineIslandElement(tag = 'marmit-bar') {
   if (typeof customElements !== 'undefined' && !customElements.get(tag)) customElements.define(tag, class extends IslandElement {});
 }
 
-declare global { interface HTMLElementTagNameMap { 'island-kit': IslandElement } }
+declare global { interface HTMLElementTagNameMap { 'marmit-bar': IslandElement } }

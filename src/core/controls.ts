@@ -62,7 +62,7 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, a
   el.append(...kids);
   return el;
 }
-const ic = (name: string) => { const s = h('span', 'ik-ic'); s.innerHTML = icons[name]; return s; };
+const ic = (name: string) => { const s = h('span', 'mm-ic'); s.innerHTML = icons[name]; return s; };
 export const opt = (o: OptionInput): Option => typeof o === 'string' ? { value: o, label: o } : { ...o, label: o.label ?? o.value };
 
 let nodeIds = new WeakMap<object, number>(), nodeSeq = 0;
@@ -106,7 +106,7 @@ const snapStep = (v: number, min: number, max: number, step: number) => clamp(Ma
 type Build = (c: Ctl, ctx: Ctx) => void;
 
 const button: Build = (c, ctx) => {
-  const el = h('button', 'ik-btn', { type: 'button' }), icon = h('span', 'ik-ic'); let badge = null as HTMLElement | null;
+  const el = h('button', 'mm-btn', { type: 'button' }), icon = h('span', 'mm-ic'); let badge = null as HTMLElement | null;
   el.append(icon); c.el = el; c.dent = true; c.drag = true;
   el.addEventListener('click', e => {
     if (c.cfg.toggle) { c.value = !c.value; c.apply(); ctx.emit(c, c.value); }
@@ -119,7 +119,7 @@ const button: Build = (c, ctx) => {
     ctx.slot(c.key + '/icon', cfg.icon ?? cfg.label?.slice(0, 1), icon);
     badge?.remove(); badge = null;
     if (cfg.badge !== undefined && cfg.badge !== false && cfg.badge !== 0 && cfg.badge !== '') {
-      badge = h('b', 'ik-badge' + (cfg.badge === true ? ' dot' : ''), { 'aria-hidden': 'true' }, cfg.badge === true ? '' : String(cfg.badge));
+      badge = h('b', 'mm-badge' + (cfg.badge === true ? ' dot' : ''), { 'aria-hidden': 'true' }, cfg.badge === true ? '' : String(cfg.badge));
       el.append(badge);
     }
   };
@@ -128,25 +128,25 @@ const button: Build = (c, ctx) => {
 };
 
 const pill: Build = (c, ctx) => {
-  const el = h('button', 'ik-pill', { type: 'button' }); c.el = el; c.dent = true; c.drag = true; c.follow = true;
+  const el = h('button', 'mm-pill', { type: 'button' }); c.el = el; c.dent = true; c.drag = true; c.follow = true;
   el.addEventListener('click', e => { c.cfg.onClick?.(e); ctx.action(c); });
   c.render = () => {
     ctx.dropSlots(c.key + '/');
     el.replaceChildren(); el.classList.toggle('solid', c.cfg.variant === 'solid');
-    if (c.cfg.icon) { const i = h('span', 'ik-ic'); ctx.slot(c.key + '/icon', c.cfg.icon, i); el.append(i); }
+    if (c.cfg.icon) { const i = h('span', 'mm-ic'); ctx.slot(c.key + '/icon', c.cfg.icon, i); el.append(i); }
     el.append(c.cfg.label);
   };
 };
 
-const separator: Build = c => { c.el = h('div', 'ik-sep', { role: 'separator', 'aria-orientation': 'vertical' }); c.fixedW = 9.5; c.follow = true; };
+const separator: Build = c => { c.el = h('div', 'mm-sep', { role: 'separator', 'aria-orientation': 'vertical' }); c.fixedW = 9.5; c.follow = true; };
 const spacer: Build = c => { c.el = h('div', '', { 'aria-hidden': 'true' }); c.render = () => { c.fixedW = c.cfg.size ?? 8; }; };
 const label: Build = c => {
-  const el = h('span', 'ik-label'); c.el = el; c.follow = true; c.drag = true;
+  const el = h('span', 'mm-label'); c.el = el; c.follow = true; c.drag = true;
   c.render = () => { el.textContent = c.cfg.text; el.classList.toggle('ink', c.cfg.muted === false); };
 };
 
 const segmented: Build = (c, ctx) => {
-  const el = h('div', 'ik-seg', { role: 'radiogroup' }), thumb = h('i', 'ik-seg-thumb', { 'aria-hidden': 'true' });
+  const el = h('div', 'mm-seg', { role: 'radiogroup' }), thumb = h('i', 'mm-seg-thumb', { 'aria-hidden': 'true' });
   c.el = el; c.follow = true; c.hasValue = true;
   arrows(el, 'button', b => b.click());
   c.render = () => {
@@ -155,7 +155,7 @@ const segmented: Build = (c, ctx) => {
     const opts = (c.cfg.options as OptionInput[]).map(opt);
     el.replaceChildren(thumb, ...opts.map((o, i) => {
       const b = h('button', '', { type: 'button', role: 'radio', 'data-v': o.value });
-      if (o.icon) { const s = h('span', 'ik-ic'); ctx.slot(`${c.key}/opt/${i}/icon`, o.icon, s); b.append(s); }
+      if (o.icon) { const s = h('span', 'mm-ic'); ctx.slot(`${c.key}/opt/${i}/icon`, o.icon, s); b.append(s); }
       if (o.label && !(o.icon && o.label === o.value && c.cfg.iconOnly)) b.append(o.label);
       b.addEventListener('click', () => { if (c.value !== o.value) { c.value = o.value; c.apply(); ctx.emit(c, c.value); } });
       return b;
@@ -171,7 +171,7 @@ const segmented: Build = (c, ctx) => {
 };
 
 const sw: Build = (c, ctx) => {
-  const el = h('div', 'ik-labeled'), lab = h('span', 'ik-label'), b = h('button', 'ik-switch', { type: 'button', role: 'switch' });
+  const el = h('div', 'mm-labeled'), lab = h('span', 'mm-label'), b = h('button', 'mm-switch', { type: 'button', role: 'switch' });
   el.append(lab, b); c.el = el; c.follow = true; c.hasValue = true; c.drag = true; c.value = !!c.cfg.value;
   b.addEventListener('click', () => { c.value = !c.value; c.apply(); ctx.emit(c, c.value); });
   c.render = () => { lab.textContent = c.cfg.label ?? ''; lab.hidden = !c.cfg.label; b.setAttribute('aria-label', c.cfg.label ?? 'Toggle'); };
@@ -179,9 +179,9 @@ const sw: Build = (c, ctx) => {
 };
 
 const slider: Build = (c, ctx) => {
-  const el = h('div', 'ik-labeled'), lab = h('span', 'ik-label'), tr = h('div', 'ik-slider', { role: 'slider', tabindex: 0 }),
-    fill = h('div', 'ik-fill'), knob = h('div', 'ik-knob'), out = h('span', 'ik-value');
-  tr.append(fill, knob); el.append(lab, tr, out); el.dataset.ikNodrag = '';
+  const el = h('div', 'mm-labeled'), lab = h('span', 'mm-label'), tr = h('div', 'mm-slider', { role: 'slider', tabindex: 0 }),
+    fill = h('div', 'mm-fill'), knob = h('div', 'mm-knob'), out = h('span', 'mm-value');
+  tr.append(fill, knob); el.append(lab, tr, out); el.dataset.mmNodrag = '';
   c.el = el; c.follow = true; c.hasValue = true;
   const lim = () => { const min = c.cfg.min ?? 0, max = c.cfg.max ?? 100; return { min, max, step: c.cfg.step ?? (max - min > 10 ? 1 : (max - min) / 100) }; };
   const set = (v: number) => { const { min, max, step } = lim(); v = snapStep(v, min, max, step); if (v !== c.value) { c.value = v; c.apply(); ctx.emit(c, v); } };
@@ -215,8 +215,8 @@ const slider: Build = (c, ctx) => {
 };
 
 const stepper: Build = (c, ctx) => {
-  const el = h('div', 'ik-labeled'), lab = h('span', 'ik-label'), box = h('div', 'ik-stepper', { role: 'spinbutton', tabindex: 0 }),
-    dn = h('button', '', { type: 'button', 'aria-label': 'Decrease', tabindex: -1 }, ic('minus')), out = h('span', 'ik-value'),
+  const el = h('div', 'mm-labeled'), lab = h('span', 'mm-label'), box = h('div', 'mm-stepper', { role: 'spinbutton', tabindex: 0 }),
+    dn = h('button', '', { type: 'button', 'aria-label': 'Decrease', tabindex: -1 }, ic('minus')), out = h('span', 'mm-value'),
     up = h('button', '', { type: 'button', 'aria-label': 'Increase', tabindex: -1 }, ic('plus'));
   box.append(dn, out, up); el.append(lab, box); c.el = el; c.follow = true; c.hasValue = true; c.drag = true;
   const lim = () => ({ min: c.cfg.min ?? -Infinity, max: c.cfg.max ?? Infinity, step: c.cfg.step ?? 1 });
@@ -238,13 +238,13 @@ const stepper: Build = (c, ctx) => {
 };
 
 const dots = (thumbs: boolean): Build => (c, ctx) => {
-  const el = h('div', 'ik-dots', { role: 'radiogroup' }); c.el = el; c.follow = true; c.hasValue = true;
+  const el = h('div', 'mm-dots', { role: 'radiogroup' }); c.el = el; c.follow = true; c.hasValue = true;
   arrows(el, 'button', b => b.click());
   c.render = () => {
     el.setAttribute('aria-label', c.cfg.label ?? (thumbs ? 'Images' : 'Colours'));
     const os = (c.cfg.options as any[]).map(o => typeof o === 'string' ? { value: o, src: o, label: undefined } : o);
     el.replaceChildren(...os.map((o, i) => {
-      const b = h('button', 'ik-dot', { type: 'button', role: 'radio', 'data-v': o.value, 'aria-label': o.label ?? (thumbs ? `Image ${i + 1}` : o.value) });
+      const b = h('button', 'mm-dot', { type: 'button', role: 'radio', 'data-v': o.value, 'aria-label': o.label ?? (thumbs ? `Image ${i + 1}` : o.value) });
       b.style.setProperty('--c', thumbs ? `url("${String(o.src).replace(/"/g, '%22')}")` : o.value);
       b.addEventListener('click', () => { if (c.value !== o.value) { c.value = o.value; c.apply(); ctx.emit(c, c.value); } });
       return b;
@@ -255,8 +255,8 @@ const dots = (thumbs: boolean): Build => (c, ctx) => {
 };
 
 const field: Build = (c, ctx) => {
-  const el = h('label', 'ik-field'), icon = h('span', 'ik-ic'), input = h('input', '', { type: 'text', spellcheck: 'false' });
-  el.append(icon, input); el.dataset.ikNodrag = ''; c.el = el; c.follow = true; c.hasValue = true; c.value = c.cfg.value ?? '';
+  const el = h('label', 'mm-field'), icon = h('span', 'mm-ic'), input = h('input', '', { type: 'text', spellcheck: 'false' });
+  el.append(icon, input); el.dataset.mmNodrag = ''; c.el = el; c.follow = true; c.hasValue = true; c.value = c.cfg.value ?? '';
   input.addEventListener('input', () => { c.value = input.value; ctx.emit(c, c.value); });
   input.addEventListener('keydown', e => { if (e.key === 'Enter') c.cfg.onSubmit?.(input.value); e.stopPropagation(); });
   c.render = () => {
@@ -267,7 +267,7 @@ const field: Build = (c, ctx) => {
 };
 
 const search: Build = (c, ctx) => {
-  const el = h('div', 'ik-search', { role: 'button', tabindex: 0, 'aria-expanded': 'false' }), input = h('input', '', { type: 'text', tabindex: -1, spellcheck: 'false' });
+  const el = h('div', 'mm-search', { role: 'button', tabindex: 0, 'aria-expanded': 'false' }), input = h('input', '', { type: 'text', tabindex: -1, spellcheck: 'false' });
   el.append(ic('search'), input); c.el = el; c.follow = false; c.hasValue = true; c.open = false; c.value = c.cfg.value ?? ''; c.dent = true; c.drag = true;
   (c as any).input = input;
   el.addEventListener('pointerdown', e => { if (c.open && e.target !== input) { e.preventDefault(); input.focus({ preventScroll: true }); } });
@@ -285,15 +285,15 @@ const search: Build = (c, ctx) => {
 };
 
 const status: Build = c => {
-  const el = h('span', 'ik-status', { role: 'status' }); c.el = el; c.follow = true; c.drag = true;
+  const el = h('span', 'mm-status', { role: 'status' }); c.el = el; c.follow = true; c.drag = true;
   c.render = () => {
     el.textContent = c.cfg.label; el.classList.toggle('pulse', c.cfg.pulse !== false);
-    const t = c.cfg.tone ?? 'success'; el.style.setProperty('--tone', t === 'neutral' ? 'var(--ik-muted)' : `var(--ik-${t})`);
+    const t = c.cfg.tone ?? 'success'; el.style.setProperty('--tone', t === 'neutral' ? 'var(--mm-muted)' : `var(--mm-${t})`);
   };
 };
 
 const avatars: Build = c => {
-  const el = h('div', 'ik-avatars', { role: 'group' }); c.el = el; c.follow = true; c.drag = true;
+  const el = h('div', 'mm-avatars', { role: 'group' }); c.el = el; c.follow = true; c.drag = true;
   const COLORS = ['#facc15', '#38bdf8', '#fb923c', '#a3e635', '#f472b6', '#a78bfa'];
   c.render = () => {
     const ps = c.cfg.people as { name: string; initials?: string; src?: string; color?: string }[], max = c.cfg.max ?? 3, shown = ps.slice(0, ps.length > max ? max - 1 : max);
@@ -308,7 +308,7 @@ const avatars: Build = c => {
 };
 
 const progress: Build = (c, ctx) => {
-  const el = h('div', 'ik-ring', { role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100 }), num = h('span');
+  const el = h('div', 'mm-ring', { role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100 }), num = h('span');
   el.innerHTML = '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11"/><circle class="arc" cx="14" cy="14" r="11" stroke-linecap="round" stroke-dasharray="69.12" stroke-dashoffset="69.12"/></svg>';
   el.append(num); c.el = el; c.hasValue = true; c.value = c.cfg.value ?? 0; c.drag = true;
   el.addEventListener('click', e => { if (c.cfg.onClick) { c.cfg.onClick(e); ctx.action(c); } });
@@ -321,9 +321,9 @@ const progress: Build = (c, ctx) => {
 };
 
 const custom: Build = (c, ctx) => {
-  const el = h('div', 'ik-custom'); c.el = el; c.follow = false;
+  const el = h('div', 'mm-custom'); c.el = el; c.follow = false;
   c.render = () => {
-    c.drag = !!c.cfg.draggable; if (!c.drag) el.dataset.ikNodrag = ''; else delete el.dataset.ikNodrag;
+    c.drag = !!c.cfg.draggable; if (!c.drag) el.dataset.mmNodrag = ''; else delete el.dataset.mmNodrag;
     c.fixedW = c.cfg.width; if (c.cfg.width) el.style.width = c.cfg.width + 'px';
     if (c.cfg.label) el.setAttribute('aria-label', c.cfg.label);
     ctx.slot(c.key + '/render', c.cfg.render, el);
@@ -336,7 +336,7 @@ function trigger(c: Ctl, ctx: Ctx, pillLabel?: () => string) {
   let el: HTMLElement;
   const make = () => {
     const pill = usePill();
-    el = h('button', pill ? 'ik-pill' : 'ik-btn', { type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false' });
+    el = h('button', pill ? 'mm-pill' : 'mm-btn', { type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false' });
     el.addEventListener('click', () => ctx.toggle(c));
     c.el = el; c.trigger = el; c.dent = true; c.drag = true; c.follow = pill;
   };
@@ -346,18 +346,18 @@ function trigger(c: Ctl, ctx: Ctx, pillLabel?: () => string) {
     el.setAttribute('aria-label', c.cfg.label);
     el.replaceChildren();
     if (usePill()) {
-      if (c.cfg.icon) { const i = h('span', 'ik-ic'); ctx.slot(c.key + '/t/icon', c.cfg.icon, i); el.append(i); }
-      const chev = ic('chevron'); chev.className = 'ik-chev';
+      if (c.cfg.icon) { const i = h('span', 'mm-ic'); ctx.slot(c.key + '/t/icon', c.cfg.icon, i); el.append(i); }
+      const chev = ic('chevron'); chev.className = 'mm-chev';
       el.append(pillLabel ? pillLabel() : c.cfg.label, chev);
     } else {
-      const i = h('span', 'ik-ic'); ctx.slot(c.key + '/t/icon', c.cfg.icon, i); el.append(i);
+      const i = h('span', 'mm-ic'); ctx.slot(c.key + '/t/icon', c.cfg.icon, i); el.append(i);
     }
   };
 }
 const head = (title: string | false | undefined, fallback: string, right?: Node) =>
-  title === false ? null : h('div', 'ik-ph', {}, h('span', '', {}, title ?? fallback), ...(right ? [right] : []));
+  title === false ? null : h('div', 'mm-ph', {}, h('span', '', {}, title ?? fallback), ...(right ? [right] : []));
 
-function rowsKeys(root: HTMLElement) { arrows(root, '[data-ik-focus]'); }
+function rowsKeys(root: HTMLElement) { arrows(root, '[data-mm-focus]'); }
 
 const menu: Build = (c, ctx) => {
   const renderTrigger = trigger(c, ctx);
@@ -365,14 +365,14 @@ const menu: Build = (c, ctx) => {
   c.panel = {
     build(pc) {
       ctx.dropSlots(c.key + '/p/');
-      const list = h('div', 'ik-rows', { role: 'menu', 'aria-label': c.cfg.label });
+      const list = h('div', 'mm-rows', { role: 'menu', 'aria-label': c.cfg.label });
       (c.cfg.items as (MenuEntry | 'separator')[]).forEach((m, i) => {
-        if (m === 'separator') { list.append(h('div', 'ik-rsep', { role: 'separator' })); return; }
-        const row = h('button', 'ik-row' + (m.danger ? ' danger' : ''), { type: 'button', role: m.checked !== undefined ? 'menuitemcheckbox' : 'menuitem', 'data-ik-focus': '', 'aria-disabled': m.disabled ? 'true' : undefined, 'aria-checked': m.checked !== undefined ? String(m.checked) : undefined });
-        if (m.checked !== undefined) row.append(Object.assign(ic('check'), { className: 'ik-ic ik-check' }));
-        if (m.icon) { const s = h('span', 'ik-ic'); ctx.slot(`${c.key}/p/${i}/icon`, m.icon, s); row.append(s); }
-        row.append(h('span', 'ik-rl', {}, m.label));
-        if (m.shortcut) row.append(h('kbd', '', {}, m.shortcut)); else if (m.hint) row.append(h('span', 'ik-hint', {}, m.hint));
+        if (m === 'separator') { list.append(h('div', 'mm-rsep', { role: 'separator' })); return; }
+        const row = h('button', 'mm-row' + (m.danger ? ' danger' : ''), { type: 'button', role: m.checked !== undefined ? 'menuitemcheckbox' : 'menuitem', 'data-mm-focus': '', 'aria-disabled': m.disabled ? 'true' : undefined, 'aria-checked': m.checked !== undefined ? String(m.checked) : undefined });
+        if (m.checked !== undefined) row.append(Object.assign(ic('check'), { className: 'mm-ic mm-check' }));
+        if (m.icon) { const s = h('span', 'mm-ic'); ctx.slot(`${c.key}/p/${i}/icon`, m.icon, s); row.append(s); }
+        row.append(h('span', 'mm-rl', {}, m.label));
+        if (m.shortcut) row.append(h('kbd', '', {}, m.shortcut)); else if (m.hint) row.append(h('span', 'mm-hint', {}, m.hint));
         row.addEventListener('click', () => {
           const cur = (c.cfg.items as (MenuEntry | 'separator')[])[i]; if (cur === 'separator' || cur?.disabled) return;
           cur?.onSelect?.(); ctx.action(c, cur.id ?? cur.label); if (c.cfg.closeOnSelect !== false) ctx.closePanel(true);
@@ -383,7 +383,7 @@ const menu: Build = (c, ctx) => {
       const hd = c.cfg.title ? head(c.cfg.title, c.cfg.label) : null;
       pc.replaceChildren(...(hd ? [hd] : []), list);
     },
-    onOpen: pc => pc.querySelector<HTMLElement>('[data-ik-focus]'),
+    onOpen: pc => pc.querySelector<HTMLElement>('[data-mm-focus]'),
   };
 };
 
@@ -399,12 +399,12 @@ const select: Build = (c, ctx) => {
   c.panel = {
     build(pc) {
       ctx.dropSlots(c.key + '/p/');
-      const list = h('div', 'ik-rows', { role: 'menu', 'aria-label': c.cfg.label });
+      const list = h('div', 'mm-rows', { role: 'menu', 'aria-label': c.cfg.label });
       opts().forEach((o, i) => {
-        const row = h('button', 'ik-row', { type: 'button', role: 'menuitemradio', 'data-ik-focus': '', 'data-v': o.value, 'aria-checked': String(o.value === c.value) });
-        row.append(Object.assign(ic('check'), { className: 'ik-ic ik-check' }));
-        if (o.icon) { const s = h('span', 'ik-ic'); ctx.slot(`${c.key}/p/${i}/icon`, o.icon, s); row.append(s); }
-        row.append(h('span', 'ik-rl', {}, o.label ?? o.value));
+        const row = h('button', 'mm-row', { type: 'button', role: 'menuitemradio', 'data-mm-focus': '', 'data-v': o.value, 'aria-checked': String(o.value === c.value) });
+        row.append(Object.assign(ic('check'), { className: 'mm-ic mm-check' }));
+        if (o.icon) { const s = h('span', 'mm-ic'); ctx.slot(`${c.key}/p/${i}/icon`, o.icon, s); row.append(s); }
+        row.append(h('span', 'mm-rl', {}, o.label ?? o.value));
         row.addEventListener('click', () => { if (c.value !== o.value) { c.value = o.value; c.apply(); ctx.emit(c, c.value); } ctx.closePanel(true); });
         list.append(row);
       });
@@ -412,7 +412,7 @@ const select: Build = (c, ctx) => {
       const hd = c.cfg.title ? head(c.cfg.title, c.cfg.label) : null;
       pc.replaceChildren(...(hd ? [hd] : []), list);
     },
-    onOpen: pc => pc.querySelector<HTMLElement>('[aria-checked=true]') ?? pc.querySelector<HTMLElement>('[data-ik-focus]'),
+    onOpen: pc => pc.querySelector<HTMLElement>('[aria-checked=true]') ?? pc.querySelector<HTMLElement>('[data-mm-focus]'),
   };
 };
 
@@ -422,10 +422,10 @@ const grid: Build = (c, ctx) => {
   c.panel = {
     build(pc) {
       ctx.dropSlots(c.key + '/p/');
-      const g = h('div', 'ik-tiles', { role: 'menu', 'aria-label': c.cfg.label });
+      const g = h('div', 'mm-tiles', { role: 'menu', 'aria-label': c.cfg.label });
       g.style.setProperty('--cols', String(c.cfg.columns ?? Math.min(3, c.cfg.items.length)));
       (c.cfg.items as any[]).forEach((t, i) => {
-        const b = h('button', 'ik-tile', { type: 'button', role: 'menuitem', 'data-ik-focus': '' }), s = h('span', 'ik-ic');
+        const b = h('button', 'mm-tile', { type: 'button', role: 'menuitem', 'data-mm-focus': '' }), s = h('span', 'mm-ic');
         ctx.slot(`${c.key}/p/${i}/icon`, t.icon, s); b.append(s, t.label);
         b.addEventListener('click', () => { const t = c.cfg.items[i]; t?.onSelect?.(); if (t) ctx.action(c, t.id ?? t.label); if (c.cfg.closeOnSelect !== false) ctx.closePanel(true); });
         g.append(b);
@@ -434,7 +434,7 @@ const grid: Build = (c, ctx) => {
       const hd = head(c.cfg.title, c.cfg.label);
       pc.replaceChildren(...(hd ? [hd] : []), g);
     },
-    onOpen: pc => pc.querySelector<HTMLElement>('[data-ik-focus]'),
+    onOpen: pc => pc.querySelector<HTMLElement>('[data-mm-focus]'),
   };
 };
 
@@ -449,12 +449,12 @@ const color: Build = (c, ctx) => {
     if (hex) hex.textContent = String(c.value).toUpperCase();
     if (prev) prev.style.background = String(c.value);
     c.pc?.querySelectorAll<HTMLElement>('[data-v]').forEach(b => { const v = b.dataset.v === c.value; b.setAttribute('aria-checked', String(v)); b.tabIndex = v ? 0 : -1; });
-    c.trigger?.style.setProperty('--ik-swatch', String(c.value));
+    c.trigger?.style.setProperty('--mm-swatch', String(c.value));
   };
   c.panel = {
     build(pc) {
-      hex = h('span'); prev = h('div', 'ik-prev', {}, h('span', '', {}, 'Preview'), h('span', '', {}, '100%'));
-      const g = h('div', 'ik-swg', { role: 'radiogroup', 'aria-label': c.cfg.label });
+      hex = h('span'); prev = h('div', 'mm-prev', {}, h('span', '', {}, 'Preview'), h('span', '', {}, '100%'));
+      const g = h('div', 'mm-swg', { role: 'radiogroup', 'aria-label': c.cfg.label });
       g.style.setProperty('--cols', String(c.cfg.columns ?? 6));
       os().forEach(col => {
         const b = h('button', '', { type: 'button', role: 'radio', 'data-v': col, 'aria-label': col });
@@ -476,7 +476,7 @@ const command: Build = (c, ctx) => {
   let input: HTMLInputElement, list: HTMLElement, empty: HTMLElement;
   const filter = () => {
     const q = input.value.trim().toLowerCase(); let n = 0, first = null as HTMLElement | null;
-    list.querySelectorAll<HTMLElement>('.ik-row').forEach(r => {
+    list.querySelectorAll<HTMLElement>('.mm-row').forEach(r => {
       const show = !q || (r.dataset.k ?? '').includes(q); r.hidden = !show; r.classList.remove('active');
       if (show) { n++; first ??= r; }
     });
@@ -488,20 +488,20 @@ const command: Build = (c, ctx) => {
     build(pc) {
       ctx.dropSlots(c.key + '/p/');
       input = h('input', '', { type: 'text', placeholder: c.cfg.placeholder ?? 'Search', 'aria-label': c.cfg.label, spellcheck: 'false' });
-      const box = h('div', 'ik-cmd', {}, ic('search'), input);
-      list = h('div', 'ik-rows', { role: 'listbox', 'aria-label': c.cfg.label });
-      empty = h('div', 'ik-empty', {}, c.cfg.empty ?? 'No results'); empty.hidden = true;
+      const box = h('div', 'mm-cmd', {}, ic('search'), input);
+      list = h('div', 'mm-rows', { role: 'listbox', 'aria-label': c.cfg.label });
+      empty = h('div', 'mm-empty', {}, c.cfg.empty ?? 'No results'); empty.hidden = true;
       (c.cfg.items as any[]).forEach((it, i) => {
-        const row = h('button', 'ik-row', { type: 'button', role: 'option', 'data-ik-focus': '', 'data-i': i, 'data-k': [it.label, it.hint, ...(it.keywords ?? [])].filter(Boolean).join(' ').toLowerCase() });
-        if (it.icon) { const s = h('span', 'ik-ic'); ctx.slot(`${c.key}/p/${i}/icon`, it.icon, s); row.append(s); }
-        row.append(h('span', 'ik-rl', {}, it.label));
-        if (it.hint) row.append(h('span', 'ik-hint', {}, it.hint));
+        const row = h('button', 'mm-row', { type: 'button', role: 'option', 'data-mm-focus': '', 'data-i': i, 'data-k': [it.label, it.hint, ...(it.keywords ?? [])].filter(Boolean).join(' ').toLowerCase() });
+        if (it.icon) { const s = h('span', 'mm-ic'); ctx.slot(`${c.key}/p/${i}/icon`, it.icon, s); row.append(s); }
+        row.append(h('span', 'mm-rl', {}, it.label));
+        if (it.hint) row.append(h('span', 'mm-hint', {}, it.hint));
         row.addEventListener('click', () => pick(i));
         list.append(row);
       });
       input.addEventListener('input', filter);
       input.addEventListener('keydown', e => {
-        const rows = [...list.querySelectorAll<HTMLElement>('.ik-row:not([hidden])')], i = rows.findIndex(r => r.classList.contains('active'));
+        const rows = [...list.querySelectorAll<HTMLElement>('.mm-row:not([hidden])')], i = rows.findIndex(r => r.classList.contains('active'));
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
           e.preventDefault(); e.stopPropagation(); rows[i]?.classList.remove('active');
           const n = rows[(i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length]; n?.classList.add('active'); n?.scrollIntoView?.({ block: 'nearest' });
@@ -520,7 +520,7 @@ const panel: Build = (c, ctx) => {
   c.render = () => renderTrigger();
   c.panel = {
     build(pc) {
-      const body = h('div', 'ik-custom'), hd = c.cfg.title ? head(c.cfg.title, c.cfg.label) : null;
+      const body = h('div', 'mm-custom'), hd = c.cfg.title ? head(c.cfg.title, c.cfg.label) : null;
       pc.replaceChildren(...(hd ? [hd] : []), body);
       ctx.slot(c.key + '/p/content', c.cfg.content, body);
     },
@@ -540,10 +540,10 @@ export function createControl(key: string, cfg: IslandItem, ctx: Ctx): Ctl {
     apply() {}, render() {},
   } as Ctl;
   const build = BUILDERS[cfg.type];
-  if (!build) throw new Error(`[islandkit] unknown item type "${(cfg as { type: string }).type}"`);
+  if (!build) throw new Error(`[marmit] unknown item type "${(cfg as { type: string }).type}"`);
   build(c, ctx);
   if (c.hasValue && 'value' in cfg && (cfg as { value?: unknown }).value !== undefined) c.value = (cfg as { value?: unknown }).value;
-  c.el.classList.add('ik-item');
+  c.el.classList.add('mm-item');
   c.sig = signature(cfg as unknown as Record<string, unknown>);
   c.render(); c.apply();
   return c;

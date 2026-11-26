@@ -1,4 +1,4 @@
-/* islandkit (React 18+). <Island items={…} /> — icons and panel content can be any React node. */
+/* marmit (React 18+). <Island items={…} /> — icons and panel content can be any React node. */
 import { createElement, forwardRef, Fragment, useEffect, useImperativeHandle, useLayoutEffect, useReducer, useRef, isValidElement, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { createIsland } from '../core/island';
@@ -51,6 +51,6 @@ export const Island = forwardRef<IslandController | null, IslandProps>(function 
     if (!isNative(value) && (isValidElement(value) || typeof value === 'object')) portals.push(createPortal(value as ReactNode, slotHost(key), key));
   });
   return createElement(Fragment, null,
-    createElement('div', { ref: host, className: props.hostClassName, style: { ...HOST[mode], ...props.hostStyle }, 'data-islandkit-host': '' }),
+    createElement('div', { ref: host, className: props.hostClassName, style: { ...HOST[mode], ...props.hostStyle }, 'data-marmit-host': '' }),
     ...portals);
 });

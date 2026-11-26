@@ -1,4 +1,4 @@
-/* islandkit/vue (Vue 3.3+). <Island :items="…" @change="…" /> — icons and panel content can be VNodes or components. */
+/* marmit/vue (Vue 3.3+). <Island :items="…" @change="…" /> — icons and panel content can be VNodes or components. */
 import { defineComponent, h, isVNode, onBeforeUnmount, onMounted, ref, shallowRef, Teleport, watch, type Component, type PropType, type VNode } from 'vue';
 import { createIsland } from '../core/island';
 import { collectSlots, hostStyle, isNative } from '../core/controls';
@@ -66,7 +66,7 @@ export const Island = defineComponent({
         if (isNative(value) || typeof value !== 'object') return;
         teleports.push(h(Teleport, { to: slotHost(key), key }, [isVNode(value) ? value : h(value as Component)]));
       });
-      return h('div', { ref: host, style: hostStyle(props.mode), 'data-islandkit-host': '' }, teleports);
+      return h('div', { ref: host, style: hostStyle(props.mode), 'data-marmit-host': '' }, teleports);
     };
   },
 });

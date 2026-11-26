@@ -1,4 +1,4 @@
-/* importing islandkit/element/register defines <island-kit> as a side effect */
+/* importing marmit/element/register defines <marmit-bar> as a side effect */
 import { defineIslandElement } from './index';
 defineIslandElement();
 export * from './index';

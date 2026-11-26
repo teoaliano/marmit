@@ -16,8 +16,8 @@ export const DEFAULT_PHYSICS: Physics = {
   arc: .25, corner: 40, lift: .15, dropletGap: 14, string: 12, panelGap: 10, neck: 26,
 };
 const THEME_VARS: Record<keyof Theme, string> = {
-  bar: '--ik-bar', ink: '--ik-ink', accent: '--ik-accent', onAccent: '--ik-on-accent', success: '--ik-success',
-  warning: '--ik-warning', danger: '--ik-danger', knob: '--ik-knob', shadow: '--ik-shadow', font: '--ik-font',
+  bar: '--mm-bar', ink: '--mm-ink', accent: '--mm-accent', onAccent: '--mm-on-accent', success: '--mm-success',
+  warning: '--mm-warning', danger: '--mm-danger', knob: '--mm-knob', shadow: '--mm-shadow', font: '--mm-font',
 };
 const NORMALS: Record<Side, [number, number]> = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] };
 
@@ -26,37 +26,37 @@ interface SlotRec { value: unknown; into: HTMLElement; cleanup?: () => void; hos
 let seq = 0;
 
 export function createIsland(input: IslandOptions): IslandController {
-  if (typeof document === 'undefined') throw new Error('[islandkit] createIsland needs a DOM (call it in the browser, after mount)');
+  if (typeof document === 'undefined') throw new Error('[marmit] createIsland needs a DOM (call it in the browser, after mount)');
   let o: IslandOptions = { mode: 'overlay', side: 'bottom', align: 'center', margin: 24, draggable: true, stretchy: true, theme: 'dark', panelDirection: 'auto', ...input };
   let ph: Physics = { ...DEFAULT_PHYSICS, ...o.physics };
   const mode = o.mode!, docked = mode !== 'inline';
   if (o.injectStyles !== false) injectStyles();
   const container = o.container ?? (mode === 'overlay' ? document.body : null);
-  if (!container) throw new Error(`[islandkit] mode "${mode}" needs a container element`);
+  if (!container) throw new Error(`[marmit] mode "${mode}" needs a container element`);
   if (mode === 'contained' && getComputedStyle(container).position === 'static') container.style.position = 'relative';
 
   /* ---------------- DOM ---------------- */
-  const gid = `ik-goo-${++seq}`;
-  const root = h('div', 'ik', { 'data-mode': mode, role: 'toolbar' });
+  const gid = `mm-goo-${++seq}`;
+  const root = h('div', 'mm', { 'data-mode': mode, role: 'toolbar' });
   const defs = h('div'); defs.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="${gid}" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="7"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"/></filter></svg>`;
   const filterSvg = defs.firstElementChild as SVGSVGElement, blurEl = filterSvg.querySelector('feGaussianBlur')!;
-  const goo = h('div', 'ik-goo', { 'aria-hidden': 'true' });
+  const goo = h('div', 'mm-goo', { 'aria-hidden': 'true' });
   goo.innerHTML = '<svg><path/></svg>';
   const gooSvg = goo.firstElementChild as SVGSVGElement, gBar = gooSvg.firstElementChild as SVGPathElement;
-  const blob = () => { const b = h('div', 'ik-blob'); goo.append(b); return b; };
+  const blob = () => { const b = h('div', 'mm-blob'); goo.append(b); return b; };
   const drop = blob(), neck = blob(), pBlob = blob(), tBlob = blob();
   const crisp = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  crisp.setAttribute('class', 'ik-crisp solo'); crisp.setAttribute('aria-hidden', 'true');
-  crisp.innerHTML = '<path class="ik-bar"/><path class="ik-string"/>';
+  crisp.setAttribute('class', 'mm-crisp solo'); crisp.setAttribute('aria-hidden', 'true');
+  crisp.innerHTML = '<path class="mm-bar"/><path class="mm-string"/>';
   const cBar = crisp.firstElementChild as SVGPathElement, cString = crisp.lastElementChild as SVGPathElement;
-  const drop2 = h('div', 'ik-drop2', { 'aria-hidden': 'true' });
-  const panelEl = h('div', 'ik-panel'); panelEl.style.display = 'none';
-  const itemsWrap = h('div', 'ik-items');
-  const closeBtn = h('button', 'ik-item ik-btn ik-close', { type: 'button', 'aria-label': 'Close search', tabindex: -1 });
-  closeBtn.innerHTML = `<span class="ik-ic">${icons.close}</span>`;
-  const tab = h('button', 'ik-tab', { type: 'button', 'aria-label': 'Hide toolbar' }); tab.innerHTML = icons.chevron;
-  const tip = h('div', 'ik-tip', { role: 'tooltip', id: gid + '-tip' });
-  const ghosts = (['top', 'right', 'bottom', 'left'] as Side[]).map(d => { const g = h('div', 'ik-ghost', { 'data-side': d }); return g; });
+  const drop2 = h('div', 'mm-drop2', { 'aria-hidden': 'true' });
+  const panelEl = h('div', 'mm-panel'); panelEl.style.display = 'none';
+  const itemsWrap = h('div', 'mm-items');
+  const closeBtn = h('button', 'mm-item mm-btn mm-close', { type: 'button', 'aria-label': 'Close search', tabindex: -1 });
+  closeBtn.innerHTML = `<span class="mm-ic">${icons.close}</span>`;
+  const tab = h('button', 'mm-tab', { type: 'button', 'aria-label': 'Hide toolbar' }); tab.innerHTML = icons.chevron;
+  const tip = h('div', 'mm-tip', { role: 'tooltip', id: gid + '-tip' });
+  const ghosts = (['top', 'right', 'bottom', 'left'] as Side[]).map(d => { const g = h('div', 'mm-ghost', { 'data-side': d }); return g; });
   root.append(filterSvg, ...ghosts, goo, crisp, drop2, panelEl, itemsWrap, closeBtn, tab, tip);
   container.append(root);
 
@@ -116,7 +116,7 @@ export function createIsland(input: IslandOptions): IslandController {
       if (host) { into.append(host); rec.host = host; }
     } else if (o.mountSlot) {
       const r = o.mountSlot(value, into); if (typeof r === 'function') rec.cleanup = r;
-    } else console.warn('[islandkit] cannot render slot value without a framework adapter:', value);
+    } else console.warn('[marmit] cannot render slot value without a framework adapter:', value);
     slots.set(key, rec);
   }
   function dropSlots(prefix: string) {
@@ -150,7 +150,7 @@ export function createIsland(input: IslandOptions): IslandController {
     if (c.cfg.disabled) c.el.setAttribute('aria-disabled', 'true'); else c.el.removeAttribute('aria-disabled');
   }
   function setup(c: Ctl) {
-    byEl.set(c.el, c); c.el.dataset.ikKey = c.key;
+    byEl.set(c.el, c); c.el.dataset.mmKey = c.key;
     if (c.type === 'search') sW.set(c, new Spring(B, .05)); else ro?.observe(c.el);
     if (c.dent) pressable(c.el, () => c.u);
   }
@@ -308,7 +308,7 @@ export function createIsland(input: IslandOptions): IslandController {
     if (sCtl?.open) setSearch(sCtl, false);
     hideTip();
     panelEl.style.display = '';
-    if (!c.pc) { c.pc = h('div', 'ik-pc'); panelEl.append(c.pc); c.panel.build(c.pc); ro?.observe(c.pc); }
+    if (!c.pc) { c.pc = h('div', 'mm-pc'); panelEl.append(c.pc); c.panel.build(c.pc); ro?.observe(c.pc); }
     const wasClosed = !fromC;
     openC?.trigger?.setAttribute('aria-expanded', 'false');
     openC = fromC = c;
@@ -342,7 +342,7 @@ export function createIsland(input: IslandOptions): IslandController {
     if (!docked || v === collapsed) return;
     collapsed = v; hide.t = v ? 1 : 0;
     if (v) { closePanel(); if (sCtl?.open) setSearch(sCtl, false); hideTip(); }
-    root.classList.toggle('ik-collapsed', v);
+    root.classList.toggle('mm-collapsed', v);
     itemsWrap.inert = v;
     tab.setAttribute('aria-label', v ? 'Show toolbar' : 'Hide toolbar'); tab.setAttribute('aria-expanded', String(!v));
     o.onCollapsedChange?.(v);
@@ -402,7 +402,7 @@ export function createIsland(input: IslandOptions): IslandController {
   function onDown(e: PointerEvent) {
     if (e.button !== 0 || press || collapsed) return;
     const t = e.target as Element;
-    if (t.closest('[data-ik-nodrag], .ik-panel, .ik-close, .ik-tab')) return;
+    if (t.closest('[data-mm-nodrag], .mm-panel, .mm-close, .mm-tab')) return;
     const c = ctlOf(t); if (c && (!c.drag || (c.type === 'search' && c.open))) return;
     const canDock = docked && o.draggable !== false, canPull = !canDock && o.stretchy !== false;
     if (!canDock && !canPull) return;
@@ -416,7 +416,7 @@ export function createIsland(input: IslandOptions): IslandController {
   }
   function startDrag() {
     dragging = true; closePanel(); hideTip(); release();
-    document.documentElement.classList.add('ik-grabbing'); root.classList.add('ik-dragging');
+    document.documentElement.classList.add('mm-grabbing'); root.classList.add('mm-dragging');
   }
   function onMove(e: PointerEvent) {
     if (!press || e.pointerId !== press.id) return;
@@ -440,7 +440,7 @@ export function createIsland(input: IslandOptions): IslandController {
     press = null;
     if (!dragging) return;
     swallowClick();
-    dragging = false; document.documentElement.classList.remove('ik-grabbing'); root.classList.remove('ik-dragging');
+    dragging = false; document.documentElement.classList.remove('mm-grabbing'); root.classList.remove('mm-dragging');
     ghosts.forEach(g => g.classList.remove('near'));
     if (dragKind === 'dock') {
       // throw: project where the release velocity would carry it, dock to the nearest edge, keep the momentum
@@ -572,7 +572,7 @@ export function createIsland(input: IslandOptions): IslandController {
       const [x0, y0, a] = spinePos(c.u), off = dip((c.u - dentU) * L.REST, dd, dw);
       c.x = x0 - Math.sin(a) * off; c.y = y0 + Math.cos(a) * off; c.angle = c.follow ? a : 0;
       if (c.type === 'search') c.el.style.width = px(widthOf(c));
-      c.el.style.transform = `translate(${px(c.x)},${px(c.y)})` + (c.follow ? ` rotate(${a.toFixed(4)}rad)` : '') + ' scale(var(--ik-press)) translate(-50%,-50%)';
+      c.el.style.transform = `translate(${px(c.x)},${px(c.y)})` + (c.follow ? ` rotate(${a.toFixed(4)}rad)` : '') + ' scale(var(--mm-press)) translate(-50%,-50%)';
     }
     // goo bounds
     let gx0 = Infinity, gy0 = Infinity, gx1 = -Infinity, gy1 = -Infinity;
@@ -585,7 +585,7 @@ export function createIsland(input: IslandOptions): IslandController {
     if (sActive) {
       const [ex0, ey0, a] = spineAt(ns, m, th), D = H / 2 + sOff.x, d = Math.max(0, sD.x), pop = clamp(sOff.x / (ph.dropletGap + H / 2), 0, 1);
       const dx = ex0 + Math.cos(a) * D, dy = ey0 + Math.sin(a) * D, landed = !!sCtl!.open && pop > .9;
-      closeBtn.style.transform = `translate(${px(dx)},${px(dy)}) scale(${(.5 + pop * .5).toFixed(3)}) scale(var(--ik-press)) translate(-50%,-50%)`;
+      closeBtn.style.transform = `translate(${px(dx)},${px(dy)}) scale(${(.5 + pop * .5).toFixed(3)}) scale(var(--mm-press)) translate(-50%,-50%)`;
       closeBtn.style.opacity = String(clamp(pop * 1.4 - .4, 0, 1));
       closeBtn.style.display = '';
       if (landed) {
@@ -638,7 +638,7 @@ export function createIsland(input: IslandOptions): IslandController {
       boxes.forEach(([, x, y, w, ht]) => grow(x, y, x + w, y + ht));
       const pad = ph.blur * 3 + 16, X0 = gx0 - pad, Y0 = gy0 - pad;
       goo.style.transform = `translate(${px(X0)},${px(Y0)})`; goo.style.width = px(gx1 - gx0 + 2 * pad); goo.style.height = px(gy1 - gy0 + 2 * pad);
-      goo.style.filter = ph.blur > 0 ? `url(#${gid}) drop-shadow(0 8px 14px var(--ik-shadow))` : 'drop-shadow(0 8px 14px var(--ik-shadow))';
+      goo.style.filter = ph.blur > 0 ? `url(#${gid}) drop-shadow(0 8px 14px var(--mm-shadow))` : 'drop-shadow(0 8px 14px var(--mm-shadow))';
       gooSvg.style.transform = `translate(${px(-X0)},${px(-Y0)})`;
       gBar.setAttribute('d', path);
       for (const [el, x, y, w, ht, r] of boxes) {
@@ -688,10 +688,10 @@ export function createIsland(input: IslandOptions): IslandController {
     root.dataset.theme = typeof t === 'string' ? t : 'dark';
     for (const v of Object.values(THEME_VARS)) root.style.removeProperty(v);
     if (t && typeof t === 'object') for (const [k, v] of Object.entries(t)) if (v && THEME_VARS[k as keyof Theme]) root.style.setProperty(THEME_VARS[k as keyof Theme], v);
-    if (o.zIndex !== undefined) root.style.setProperty('--ik-z', String(o.zIndex)); else root.style.removeProperty('--ik-z');
+    if (o.zIndex !== undefined) root.style.setProperty('--mm-z', String(o.zIndex)); else root.style.removeProperty('--mm-z');
     root.setAttribute('aria-label', o.label ?? 'Toolbar');
     root.setAttribute('aria-orientation', hz() ? 'horizontal' : 'vertical');
-    root.classList.toggle('ik-draggable', docked && o.draggable !== false);
+    root.classList.toggle('mm-draggable', docked && o.draggable !== false);
     if (o.className) root.classList.add(...o.className.split(/\s+/).filter(Boolean));
     blurEl.setAttribute('stdDeviation', String(Math.max(0, ph.blur)));
   }
@@ -707,7 +707,7 @@ export function createIsland(input: IslandOptions): IslandController {
   setItems(o.items ?? []);
   stage();
   layout();
-  if (docked) { jump(side); if (collapsed) { root.classList.add('ik-collapsed'); itemsWrap.inert = true; } }
+  if (docked) { jump(side); if (collapsed) { root.classList.add('mm-collapsed'); itemsWrap.inert = true; } }
   root.setAttribute('aria-orientation', hz() ? 'horizontal' : 'vertical');
   ready = true;
   sim(0); settle(); render();
@@ -753,7 +753,7 @@ export function createIsland(input: IslandOptions): IslandController {
       removeEventListener('pointerup', onDocUp); removeEventListener('pointercancel', onDocUp); removeEventListener('blur', onDocUp);
       removeEventListener('pointermove', onHover); removeEventListener('resize', onResize);
       removeEventListener('pointermove', onMove); removeEventListener('pointerup', onUp); removeEventListener('pointercancel', onUp);
-      document.documentElement.classList.remove('ik-grabbing');
+      document.documentElement.classList.remove('mm-grabbing');
       for (const r of slots.values()) r.cleanup?.();
       slots.clear();
       ctls.forEach(c => c.destroy?.());

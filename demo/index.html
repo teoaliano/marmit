@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>islandkit demo</title>
+<title>marmit demo</title>
 <style>
   :root { color-scheme: dark; }
   html, body { margin: 0; background: #2a2d33; color: #fff; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
@@ -18,7 +18,7 @@
 <body>
 <div id="log">—</div>
 <main>
-  <h1>islandkit</h1>
+  <h1>marmit</h1>
 
   <section><p class="cap">buttons: primary · icon · toggle · badge · pill · solid pill (drag to pull the bar; it bends and wobbles back)</p><div id="r1"></div></section>
   <section><p class="cap">choice: segmented · switch · stepper</p><div id="r2"></div></section>
@@ -30,7 +30,7 @@
 </main>
 <script src="../dist/vanilla/browser.global.js"></script>
 <script>
-  const { createIsland } = IslandKit;
+  const { createIsland } = Marmit;
   const log = (...a) => { document.getElementById('log').textContent = a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '); };
   const thumb = (a, b) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)"/></svg>`);
   const inline = (id, items, extra = {}) => createIsland({ mode: 'inline', container: document.getElementById(id), items, onChange: (k, v) => log(k, '=', v), onAction: (k, e) => log('action', k, e ?? ''), ...extra });

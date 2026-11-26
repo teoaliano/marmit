@@ -20,7 +20,7 @@ for (const f of fws) {
     plugins: [sveltePlugin], define: { 'process.env.NODE_ENV': '"production"' }, conditions: ['browser'], logLevel: 'error',
   });
   const body = f === 'element'
-    ? `<island-kit id="el" mode="inline"><script type="application/json">{"items":[{"type":"button","label":"From JSON","icon":"heart"},{"type":"separator"},{"type":"segmented","id":"seg","options":["A","B"]}]}</script></island-kit>`
+    ? `<marmit-bar id="el" mode="inline"><script type="application/json">{"items":[{"type":"button","label":"From JSON","icon":"heart"},{"type":"separator"},{"type":"segmented","id":"seg","options":["A","B"]}]}</script></marmit-bar>`
     : '<div id="app"></div>';
   await writeFile(path.join(out, f + '.html'), `<!doctype html><meta charset=utf-8><body style="margin:0;background:#2a2d33;color:#fff;font:13px sans-serif;padding:20px">${body}<script src="./${f}.js"></script>`);
 }
@@ -44,29 +44,29 @@ for (const f of fws) {
     await page.mouse.click(...c); await wait(500);
   };
   const text = sel => page.$eval(sel, el => el.textContent).catch(() => '(missing)');
-  const labels = () => page.$$eval('.ik-label', els => els.map(e => e.textContent));
+  const labels = () => page.$$eval('.mm-label', els => els.map(e => e.textContent));
 
   if (f === 'react') {
-    check('react: renders a React node as the icon', !!(await page.$('.ik [aria-label="Star"] svg path')));
-    await click('.ik [aria-label="Star"]');
+    check('react: renders a React node as the icon', !!(await page.$('.mm [aria-label="Star"] svg path')));
+    await click('.mm [aria-label="Star"]');
     check('react: toggle updates React state', (await text('#state')).includes('starred true'), await text('#state'));
-    await click('.ik [aria-label="Increase"]');
+    await click('.mm [aria-label="Increase"]');
     check('react: stepper drives React state', (await text('#state')).includes('zoom 125'), await text('#state'));
-    await click('.ik [aria-label="About"]');
+    await click('.mm [aria-label="About"]');
     check('react: panel shows React content, re-rendered', (await text('#react-panel')).includes('125'), await text('#react-panel'));
-    check('react: overlay dock pill tracks state', (await page.$$eval('.ik-pill', els => els.map(e => e.textContent))).includes('Zoom 125%'));
+    check('react: overlay dock pill tracks state', (await page.$$eval('.mm-pill', els => els.map(e => e.textContent))).includes('Zoom 125%'));
   }
   if (f === 'vue') {
-    check('vue: component icon', !!(await page.$('.ik [aria-label="Star"] svg path')));
-    await click('.ik [aria-label="Increase"]');
+    check('vue: component icon', !!(await page.$('.mm [aria-label="Star"] svg path')));
+    await click('.mm [aria-label="Increase"]');
     check('vue: stepper drives ref', (await text('#state')).includes('zoom 125'), await text('#state'));
-    await click('.ik [aria-label="More"]');
-    check('vue: menu rows with VNode icons', (await page.$$('.ik-pc.on .ik-row svg')).length >= 1);
-    await click('.ik-pc.on .ik-row');
+    await click('.mm [aria-label="More"]');
+    check('vue: menu rows with VNode icons', (await page.$$('.mm-pc.on .mm-row svg')).length >= 1);
+    await click('.mm-pc.on .mm-row');
     check('vue: onAction emits', (await text('#state')).includes('more:One'), await text('#state'));
   }
   if (f === 'solid') {
-    check('solid: DOM node icon', !!(await page.$('.ik [aria-label="Star"] svg path')));
+    check('solid: DOM node icon', !!(await page.$('.mm [aria-label="Star"] svg path')));
     await page.evaluate(() => window.solidBump());
     await wait(300);
     check('solid: reactive items update', (await labels()).includes('count 2'), JSON.stringify(await labels()));
@@ -78,9 +78,9 @@ for (const f of fws) {
     check('svelte: action update', (await labels()).includes('Updated'), JSON.stringify(await labels()));
   }
   if (f === 'element') {
-    check('element: options from JSON child', !!(await page.$('.ik [aria-label="From JSON"]')));
+    check('element: options from JSON child', !!(await page.$('.mm [aria-label="From JSON"]')));
     await page.evaluate(() => document.getElementById('el').addEventListener('change', e => { window.lastChange = e.detail; }));
-    await click('.ik-seg button:nth-of-type(2)');
+    await click('.mm-seg button:nth-of-type(2)');
     check('element: change event', (await page.evaluate(() => window.lastChange?.value)) === 'B', JSON.stringify(await page.evaluate(() => window.lastChange)));
   }
   await page.screenshot({ path: path.join(here, 'shots', 'adapter-' + f + '.png') });

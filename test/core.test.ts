@@ -36,10 +36,10 @@ describe('controller', () => {
   it('mounts a toolbar with every item', () => {
     const isl = createIsland({ items: items() });
     expect(isl.el.getAttribute('role')).toBe('toolbar');
-    expect(isl.el.querySelectorAll('.ik-items > .ik-item').length).toBe(7);
+    expect(isl.el.querySelectorAll('.mm-items > .mm-item').length).toBe(7);
     expect(isl.el.querySelector('[aria-label="Add"] svg')).toBeTruthy();
     isl.destroy();
-    expect(document.querySelector('.ik')).toBeNull();
+    expect(document.querySelector('.mm')).toBeNull();
   });
   it('reads initial values and defaults', () => {
     const isl = createIsland({ items: items() });
@@ -53,7 +53,7 @@ describe('controller', () => {
     (isl.el.querySelector('[aria-label="Grid"]') as HTMLButtonElement).click();
     expect(itemChange).toHaveBeenCalledWith(true);
     expect(onChange).toHaveBeenCalledWith('grid', true, expect.objectContaining({ grid: true }));
-    (isl.el.querySelectorAll('.ik-seg button')[0] as HTMLButtonElement).click();
+    (isl.el.querySelectorAll('.mm-seg button')[0] as HTMLButtonElement).click();
     expect(isl.get('range')).toBe('Day');
     isl.destroy();
   });
@@ -61,23 +61,23 @@ describe('controller', () => {
     const onChange = vi.fn(), isl = createIsland({ items: items(), onChange });
     isl.set('size', 9); isl.set('range', 'Day');
     expect(isl.get('size')).toBe(9);
-    expect(isl.el.querySelector('.ik-seg [aria-checked=true]')!.textContent).toBe('Day');
+    expect(isl.el.querySelector('.mm-seg [aria-checked=true]')!.textContent).toBe('Day');
     expect(onChange).not.toHaveBeenCalled();
     isl.destroy();
   });
   it('update() keeps elements of items whose id survives, and follows controlled values', () => {
     const isl = createIsland({ items: items() });
-    const before = isl.el.querySelector('[data-ik-key="grid"]');
+    const before = isl.el.querySelector('[data-mm-key="grid"]');
     const next = items(); (next[1] as any).value = true; next.splice(0, 1);
     isl.update({ items: next });
-    expect(isl.el.querySelector('[data-ik-key="grid"]')).toBe(before);
-    expect(isl.el.querySelector('[data-ik-key="add"]')).toBeNull();
+    expect(isl.el.querySelector('[data-mm-key="grid"]')).toBe(before);
+    expect(isl.el.querySelector('[data-mm-key="add"]')).toBeNull();
     expect(isl.get('grid')).toBe(true);
     isl.destroy();
   });
   it('re-renders an item only when its structure changes', () => {
     const isl = createIsland({ items: [{ type: 'pill', id: 'p', label: 'Share', onClick: () => {} }] });
-    const el = isl.el.querySelector('[data-ik-key="p"]')!;
+    const el = isl.el.querySelector('[data-mm-key="p"]')!;
     isl.update({ items: [{ type: 'pill', id: 'p', label: 'Share', onClick: () => {} }] });
     expect(el.textContent).toBe('Share');
     isl.update({ items: [{ type: 'pill', id: 'p', label: 'Shared' }] });
@@ -88,8 +88,8 @@ describe('controller', () => {
     const onOpenChange = vi.fn(), onAction = vi.fn(), isl = createIsland({ items: items(), onOpenChange, onAction });
     isl.open('more');
     expect(isl.openId).toBe('more');
-    expect(isl.el.querySelector('[data-ik-key="more"]')!.getAttribute('aria-expanded')).toBe('true');
-    (isl.el.querySelector('.ik-pc.on .ik-row') as HTMLButtonElement).click();
+    expect(isl.el.querySelector('[data-mm-key="more"]')!.getAttribute('aria-expanded')).toBe('true');
+    (isl.el.querySelector('.mm-pc.on .mm-row') as HTMLButtonElement).click();
     expect(onAction).toHaveBeenCalledWith('more', 'Delete');
     expect(isl.openId).toBeNull();
     expect(onOpenChange.mock.calls.map(c => c[0])).toEqual(['more', null]);
@@ -98,24 +98,24 @@ describe('controller', () => {
   it('select keeps its trigger label in sync', () => {
     const isl = createIsland({ items: items() });
     isl.open('fit');
-    (isl.el.querySelectorAll('.ik-pc.on .ik-row')[1] as HTMLButtonElement).click();
+    (isl.el.querySelectorAll('.mm-pc.on .mm-row')[1] as HTMLButtonElement).click();
     expect(isl.get('fit')).toBe('Fit');
-    expect(isl.el.querySelector('[data-ik-key="fit"]')!.textContent).toContain('Fit');
+    expect(isl.el.querySelector('[data-mm-key="fit"]')!.textContent).toContain('Fit');
     isl.destroy();
   });
   it('custom render functions get an element and their cleanup runs on destroy', () => {
     const cleanup = vi.fn();
     const isl = createIsland({ items: [{ type: 'custom', id: 'c', width: 50, render: el => { el.textContent = 'hi'; return cleanup; } }] });
-    expect(isl.el.querySelector('.ik-custom')!.textContent).toBe('hi');
+    expect(isl.el.querySelector('.mm-custom')!.textContent).toBe('hi');
     isl.destroy();
     expect(cleanup).toHaveBeenCalled();
   });
   it('applies a theme object as custom properties', () => {
     const isl = createIsland({ items: [], theme: { bar: 'rebeccapurple', accent: 'gold' } });
-    expect(isl.el.style.getPropertyValue('--ik-bar')).toBe('rebeccapurple');
+    expect(isl.el.style.getPropertyValue('--mm-bar')).toBe('rebeccapurple');
     isl.update({ theme: 'light' });
     expect(isl.el.dataset.theme).toBe('light');
-    expect(isl.el.style.getPropertyValue('--ik-bar')).toBe('');
+    expect(isl.el.style.getPropertyValue('--mm-bar')).toBe('');
     isl.destroy();
   });
 });

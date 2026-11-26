@@ -1,31 +1,31 @@
-# islandkit
+# Marmit
 
 A gooey, spring-driven floating toolbar. One black island carries any mix of controls, grows panels out of itself through a liquid neck, melts a search field open (a close droplet pinches off its end), dents under a press, bends when you pull it, and can be thrown at any edge of the screen to re-dock there.
 
 It works as an app's command dock, a canvas tool bar, a tiny menu bar, or a live control strip. The engine is plain DOM with no dependencies (about 25 kB gzipped, styles included). React, Vue, Svelte, Solid and a web component are thin wrappers round the same core, packaged the way [DialKit](https://www.dialkit.dev/) is: one package, one subpath per stack.
 
 ```
-npm install islandkit
+npm install marmit
 ```
 
 | Stack | Import | Needs |
 |---|---|---|
-| React 18+ | `import { Island } from 'islandkit'` | `react`, `react-dom` |
-| Vue 3.3+ | `import { Island } from 'islandkit/vue'` | `vue` |
-| Svelte 5 | `import { island } from 'islandkit/svelte'` | `svelte` |
-| Solid 1.6+ | `import { Island } from 'islandkit/solid'` | `solid-js` |
-| Web component (Angular, Astro, Lit, HTMX, Rails, Django…) | `import 'islandkit/element/register'` | nothing |
-| Plain JS | `import { createIsland } from 'islandkit/vanilla'` | nothing |
-| `<script>` tag | `islandkit/vanilla/browser.js` → `window.IslandKit` | nothing |
+| React 18+ | `import { Island } from 'marmit'` | `react`, `react-dom` |
+| Vue 3.3+ | `import { Island } from 'marmit/vue'` | `vue` |
+| Svelte 5 | `import { island } from 'marmit/svelte'` | `svelte` |
+| Solid 1.6+ | `import { Island } from 'marmit/solid'` | `solid-js` |
+| Web component (Angular, Astro, Lit, HTMX, Rails, Django…) | `import 'marmit/element/register'` | nothing |
+| Plain JS | `import { createIsland } from 'marmit/vanilla'` | nothing |
+| `<script>` tag | `marmit/vanilla/browser.js` → `window.Marmit` | nothing |
 
-The stylesheet is injected for you. To ship it yourself (for a strict CSP, say), pass `injectStyles: false` and `import 'islandkit/styles.css'`.
+The stylesheet is injected for you. To ship it yourself (for a strict CSP, say), pass `injectStyles: false` and `import 'marmit/styles.css'`.
 
 ## Quick start
 
 ### React
 
 ```tsx
-import { Island } from 'islandkit';
+import { Island } from 'marmit';
 
 export function Toolbar() {
   const [zoom, setZoom] = useState(100);
@@ -54,7 +54,7 @@ export function Toolbar() {
 
 ```vue
 <script setup>
-import { Island } from 'islandkit/vue';
+import { Island } from 'marmit/vue';
 import StarIcon from './StarIcon.vue';
 const zoom = ref(100);
 </script>
@@ -73,7 +73,7 @@ Icons and panel content can be components or VNodes. Events: `change`, `action`,
 
 ```svelte
 <script>
-  import { island } from 'islandkit/svelte';
+  import { island } from 'marmit/svelte';
   import Star from './Star.svelte';
   let size = $state(50);
 </script>
@@ -92,7 +92,7 @@ It's an action, so there's nothing to compile. Svelte components go in as `{ com
 ### Solid
 
 ```tsx
-import { Island } from 'islandkit/solid';
+import { Island } from 'marmit/solid';
 
 <Island mode="inline" items={[{ type: 'button', label: 'Star', icon: <StarIcon /> }, { type: 'switch', id: 'snap', label: 'Snap' }]} />
 ```
@@ -102,17 +102,17 @@ Solid's JSX produces real DOM nodes, so icons and content work as they are.
 ### Web component
 
 ```html
-<script type="module">import 'https://esm.sh/islandkit/element/register';</script>
+<script type="module">import 'https://esm.sh/marmit/element/register';</script>
 
-<island-kit side="bottom" collapsible>
+<marmit-bar side="bottom" collapsible>
   <script type="application/json">
     { "items": [ { "type": "button", "id": "add", "label": "Add", "icon": "plus", "variant": "primary" },
                  { "type": "menu", "id": "more", "label": "More", "icon": "more", "items": [{ "label": "Delete", "danger": true }] } ] }
   </script>
-</island-kit>
+</marmit-bar>
 
 <script>
-  const el = document.querySelector('island-kit');
+  const el = document.querySelector('marmit-bar');
   el.addEventListener('action', e => console.log(e.detail));   // { id: 'more', entry: 'Delete' }
   el.addEventListener('change', e => console.log(e.detail));   // { id, value, values }
   // or set everything from JS, callbacks included: el.options = { items: [...] }
@@ -124,7 +124,7 @@ Attributes: `side`, `mode`, `theme`, `align`, `margin`, `label`, `z-index`, `pan
 ### Plain JavaScript
 
 ```js
-import { createIsland } from 'islandkit/vanilla';
+import { createIsland } from 'marmit/vanilla';
 
 const island = createIsland({
   items: [
@@ -135,7 +135,7 @@ const island = createIsland({
 island.set('q', 'hello');
 ```
 
-No bundler: load `node_modules/islandkit/dist/vanilla/browser.global.js` with a `<script>` tag (or from a CDN at `https://unpkg.com/islandkit/dist/vanilla/browser.global.js`) and call `IslandKit.createIsland(...)`.
+No bundler: load `node_modules/marmit/dist/vanilla/browser.global.js` with a `<script>` tag (or from a CDN at `https://unpkg.com/marmit/dist/vanilla/browser.global.js`) and call `Marmit.createIsland(...)`.
 
 ## Modes
 
@@ -232,13 +232,13 @@ island.destroy();
 createIsland({ theme: { bar: '#0b0b0f', ink: '#f4f4f5', accent: '#a3e635', onAccent: '#0b0b0f', danger: '#f43f5e' }, items });
 ```
 
-Theme keys: `bar ink accent onAccent success warning danger knob shadow font`. They set `--ik-bar`, `--ik-ink` and the rest on the island's root, so plain CSS works too:
+Theme keys: `bar ink accent onAccent success warning danger knob shadow font`. They set `--mm-bar`, `--mm-ink` and the rest on the island's root, so plain CSS works too:
 
 ```css
-.ik { --ik-bar: #111; --ik-accent: hotpink; }
+.mm { --mm-bar: #111; --mm-accent: hotpink; }
 ```
 
-Surfaces, lines and muted text are mixed from `--ik-ink`, so a two-colour theme stays consistent.
+Surfaces, lines and muted text are mixed from `--mm-ink`, so a two-colour theme stays consistent.
 
 ## Motion
 

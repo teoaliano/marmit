@@ -166,7 +166,7 @@ function loop(now: number) {
   const n = Math.max(1, Math.ceil(dt * 240)), h = dt / n;
   let live = false;
   for (const s of systems) {
-    try { if (s.tick(h, n)) live = true; } catch (err) { console.error('[islandkit]', err); }
+    try { if (s.tick(h, n)) live = true; } catch (err) { console.error('[marmit]', err); }
   }
   raf = live ? requestAnimationFrame(loop) : 0;
 }

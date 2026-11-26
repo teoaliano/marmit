@@ -1,4 +1,4 @@
-/* islandkit/svelte (Svelte 5). An action, so there is nothing to compile:
+/* marmit/svelte (Svelte 5). An action, so there is nothing to compile:
 
    <div use:island={{ items, side: 'bottom' }}></div>
 

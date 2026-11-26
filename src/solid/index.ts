@@ -1,4 +1,4 @@
-/* islandkit/solid (Solid 1.6+). <Island items={[…]} /> — JSX icons are DOM nodes in Solid, so they just work. */
+/* marmit/solid (Solid 1.6+). <Island items={[…]} /> — JSX icons are DOM nodes in Solid, so they just work. */
 import { createEffect, onCleanup, untrack, type JSX } from 'solid-js';
 import { createIsland } from '../core/island';
 import { hostStyle } from '../core/controls';
@@ -17,7 +17,7 @@ const KEYS = ['items', 'mode', 'side', 'align', 'margin', 'draggable', 'stretchy
 export function Island(props: IslandProps): JSX.Element {
   if (typeof document === 'undefined') return null as unknown as JSX.Element;
   const host = document.createElement('div');
-  host.dataset.islandkitHost = '';
+  host.dataset.marmitHost = '';
   host.style.cssText = hostStyle(props.mode);
   let ctl: IslandController | null = null;
   const read = () => { const o: Record<string, unknown> = {}; for (const k of KEYS) { const v = props[k as keyof IslandProps]; if (v !== undefined) o[k] = v; } return o as unknown as IslandOptions; };

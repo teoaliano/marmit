@@ -316,7 +316,7 @@ export interface IslandOptions {
   label?: string;
   className?: string;
   zIndex?: number;
-  /** Inject the stylesheet into the document head (default true). Set false if you import `islandkit/styles.css`. */
+  /** Inject the stylesheet into the document head (default true). Set false if you import `marmit/styles.css`. */
   injectStyles?: boolean;
   onChange?: (id: string, value: unknown, values: Record<string, unknown>) => void;
   /** Buttons, pills, menu entries, grid tiles and commands: `entry` is the chosen entry's id (or label). */

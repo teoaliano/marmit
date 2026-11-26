@@ -1,5 +1,5 @@
 {
-  "name": "islandkit",
+  "name": "marmit",
   "version": "0.1.0",
   "description": "A gooey, physics-driven floating toolbar with built-in controls, for React, Vue, Svelte, Solid, web components and plain JavaScript",
   "type": "module",
@@ -133,5 +133,13 @@
     "web component",
     "vanilla"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teoaliano/marmit.git"
+  },
+  "homepage": "https://github.com/teoaliano/marmit#readme",
+  "bugs": {
+    "url": "https://github.com/teoaliano/marmit/issues"
+  }
 }
