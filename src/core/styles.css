@@ -1,0 +1,201 @@
+/* islandkit — every rule is scoped under .ik. Theme with the --ik-* custom properties. */
+@property --ik-press { syntax: '<number>'; inherits: false; initial-value: 1; }
+
+.ik {
+  --ik-bar: #000; --ik-ink: #fff; --ik-accent: #fff; --ik-on-accent: #000;
+  --ik-success: oklch(.72 .19 150); --ik-warning: oklch(.8 .16 80); --ik-danger: oklch(.64 .21 25);
+  --ik-knob: #fff; --ik-shadow: rgb(0 0 0 / .22);
+  --ik-font: 500 13px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", "Segoe UI", sans-serif;
+  --ik-tint: color-mix(in oklch, var(--ik-ink) 11%, transparent);
+  --ik-tint-2: color-mix(in oklch, var(--ik-ink) 22%, transparent);
+  --ik-line: color-mix(in oklch, var(--ik-ink) 14%, transparent);
+  --ik-track: color-mix(in oklch, var(--ik-ink) 22%, transparent);
+  --ik-muted: color-mix(in oklch, var(--ik-ink) 60%, transparent);
+  --ik-ease: cubic-bezier(.32, .72, 0, 1);
+  position: fixed; inset: 0; z-index: var(--ik-z, 2147483000); pointer-events: none;
+  font: var(--ik-font); color: var(--ik-ink); letter-spacing: normal; text-align: left;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+.ik[data-theme=light] { --ik-bar: #fff; --ik-ink: #111114; --ik-accent: #111114; --ik-on-accent: #fff; --ik-knob: #fff; --ik-shadow: rgb(20 20 30 / .16); }
+@media (prefers-color-scheme: light) {
+  .ik[data-theme=auto] { --ik-bar: #fff; --ik-ink: #111114; --ik-accent: #111114; --ik-on-accent: #fff; --ik-knob: #fff; --ik-shadow: rgb(20 20 30 / .16); }
+}
+.ik[data-mode=contained] { position: absolute; z-index: var(--ik-z, 10); }
+.ik[data-mode=inline] { position: relative; inset: auto; display: inline-block; vertical-align: middle; z-index: var(--ik-z, auto); flex: none; }
+.ik, .ik *, .ik *::before, .ik *::after { box-sizing: border-box; }
+.ik button, .ik input { font: inherit; color: inherit; margin: 0; letter-spacing: inherit; }
+.ik button { -webkit-appearance: none; appearance: none; }
+.ik svg { display: block; overflow: visible; }
+.ik :focus { outline: none; }
+.ik :focus-visible { outline: 1.5px solid var(--ik-muted); outline-offset: 2px; }
+
+/* ---------- layers ---------- */
+.ik-goo { position: absolute; left: 0; top: 0; pointer-events: none; display: none; }
+.ik-goo.on { display: block; }
+.ik-goo > svg, .ik-crisp { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; }
+.ik-goo path { fill: var(--ik-bar); }
+.ik-blob { position: absolute; left: 0; top: 0; width: 40px; height: 40px; background: var(--ik-bar); border-radius: 999px; }
+.ik-crisp .ik-bar { fill: var(--ik-bar); pointer-events: visiblePainted; }
+.ik-crisp .ik-string { fill: var(--ik-bar); }
+.ik-crisp.solo { filter: drop-shadow(0 8px 14px var(--ik-shadow)); }
+.ik-drop2 { position: absolute; left: 0; top: 0; background: var(--ik-bar); border-radius: 999px; pointer-events: none; }
+.ik-ghost { position: absolute; left: 0; top: 0; border-radius: 999px; border: 1.5px dashed var(--ik-muted); opacity: 0; transition: opacity .2s ease-out; pointer-events: none; }
+.ik-dragging .ik-ghost { opacity: .3; }
+.ik-dragging .ik-ghost.near { opacity: 1; border-style: solid; }
+
+/* ---------- items on the bar ---------- */
+.ik-item { position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: auto; white-space: nowrap; user-select: none; -webkit-user-select: none; will-change: transform; }
+.ik-item[hidden] { display: none !important; }
+.ik-item.disabled { opacity: .35; pointer-events: none; }
+.ik-labeled { display: flex; align-items: center; gap: 8px; height: 32px; }
+.ik-label { padding: 0 2px 0 6px; color: var(--ik-muted); }
+.ik-label.ink { color: var(--ik-ink); }
+.ik-value { font-variant-numeric: tabular-nums; min-width: 34px; text-align: center; }
+
+.ik-btn { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; background: transparent; cursor: pointer;
+  opacity: .75; transition: background .2s ease-out, opacity .2s ease-out, --ik-press .15s ease-out; }
+.ik-btn:hover { background: var(--ik-tint); opacity: 1; }
+.ik-btn.on, .ik-btn[aria-expanded=true] { background: var(--ik-tint-2); opacity: 1; }
+.ik-btn.primary, .ik-btn.primary:hover { background: var(--ik-accent); color: var(--ik-on-accent); opacity: 1; }
+.ik-btn > .ik-ic { width: 15px; height: 15px; display: grid; place-items: center; }
+.ik-ic > svg { width: 100%; height: 100%; }
+.ik-btn:active, .ik-pill:active, .ik-search:not(.open):active, .ik-item.pressed { --ik-press: .92; }
+html.ik-grabbing, html.ik-grabbing * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+.ik-draggable .ik-bar { cursor: grab; }
+.ik-draggable .ik-bar, .ik-draggable .ik-items > .ik-item, .ik[data-mode=inline] .ik-items > .ik-item { touch-action: none; }
+.ik-badge { position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 14px; background: var(--ik-danger); color: #fff;
+  font-size: 9px; font-weight: 700; line-height: 14px; text-align: center; pointer-events: none; }
+.ik-badge.dot { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 5px; right: 5px; box-shadow: 0 0 0 2px var(--ik-bar); }
+
+.ik-pill { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--ik-tint); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .2s ease-out, --ik-press .15s ease-out; }
+.ik-pill:hover, .ik-pill[aria-expanded=true] { background: var(--ik-tint-2); }
+.ik-pill.solid { background: var(--ik-accent); color: var(--ik-on-accent); }
+.ik-pill .ik-ic { width: 14px; height: 14px; }
+.ik-pill .ik-chev { width: 12px; height: 12px; opacity: .7; transition: transform .3s var(--ik-ease); }
+.ik-pill[aria-expanded=true] .ik-chev { transform: rotate(180deg); }
+
+.ik-sep { width: 1.5px; height: 20px; background: var(--ik-line); border-radius: 1px; }
+
+.ik-seg { position: relative; display: flex; height: 32px; border-radius: 999px; background: var(--ik-tint); }
+.ik-seg button { position: relative; z-index: 1; border: 0; background: none; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--ik-muted);
+  border-radius: 999px; transition: color .2s ease-out; }
+.ik-seg button:hover { color: var(--ik-ink); }
+.ik-seg button[aria-checked=true] { color: var(--ik-on-accent); }
+.ik-seg button .ik-ic { width: 14px; height: 14px; }
+.ik-seg-thumb { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px; background: var(--ik-accent); transition: transform .3s var(--ik-ease), width .3s var(--ik-ease); }
+
+.ik-switch { width: 38px; height: 22px; border: 0; padding: 0; border-radius: 999px; background: var(--ik-tint-2); position: relative; cursor: pointer; transition: background .2s ease-out; }
+.ik-switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--ik-knob);
+  box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: transform .3s var(--ik-ease); }
+.ik-switch[aria-checked=true] { background: var(--ik-success); }
+.ik-switch[aria-checked=true]::after { transform: translateX(16px); }
+
+.ik-slider { position: relative; height: 32px; cursor: pointer; touch-action: none; }
+.ik-slider::before, .ik-slider .ik-fill { content: ""; position: absolute; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 3px; }
+.ik-slider::before { left: 0; right: 0; background: var(--ik-track); }
+.ik-slider .ik-fill { left: 0; background: var(--ik-accent); }
+.ik-slider .ik-knob { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--ik-accent); transition: transform .15s ease-out; }
+.ik-slider:hover .ik-knob, .ik-slider.drag .ik-knob, .ik-slider:focus-visible .ik-knob { transform: scale(1.25); }
+
+.ik-stepper { display: flex; align-items: center; height: 32px; border-radius: 999px; background: var(--ik-tint); }
+.ik-stepper button { width: 32px; height: 32px; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 50%; display: grid; place-items: center; opacity: .75;
+  transition: background .2s ease-out, opacity .2s ease-out; }
+.ik-stepper button:hover { opacity: 1; background: var(--ik-tint); }
+.ik-stepper button:disabled { opacity: .25; pointer-events: none; }
+.ik-stepper .ik-ic { width: 12px; height: 12px; }
+
+.ik-dots { display: flex; gap: 8px; padding: 0 5px; }
+.ik-dot { width: 22px; height: 22px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: var(--c) center / cover no-repeat; opacity: .55;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); transition: opacity .2s ease-out, box-shadow .2s ease-out, transform .15s ease-out; }
+.ik-dot:hover { opacity: .85; }
+.ik-dot:active { transform: scale(.92); }
+.ik-dot[aria-checked=true] { opacity: 1; box-shadow: 0 0 0 1.5px var(--ik-bar), 0 0 0 3px var(--ik-ink); }
+
+.ik-field { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--ik-tint); }
+.ik-field .ik-ic { width: 15px; height: 15px; color: var(--ik-muted); flex: none; }
+.ik-field input, .ik-search input, .ik-cmd input { all: unset; flex: 1; min-width: 0; font: inherit; color: var(--ik-ink); }
+.ik-field input::placeholder, .ik-search input::placeholder, .ik-cmd input::placeholder { color: var(--ik-muted); }
+.ik-field:focus-within { box-shadow: 0 0 0 1.5px var(--ik-track); }
+
+.ik-search { height: 32px; border-radius: 999px; display: flex; align-items: center; overflow: hidden; cursor: pointer; transition: background .2s ease-out; }
+.ik-search:hover, .ik-search.open { background: var(--ik-tint); }
+.ik-search.open { cursor: text; }
+.ik-search > .ik-ic { flex: none; width: 15px; height: 15px; margin: 0 8.5px; opacity: .75; transition: opacity .2s ease-out; }
+.ik-search:hover > .ik-ic, .ik-search.open > .ik-ic { opacity: 1; }
+.ik-search input { padding-right: 12px; opacity: 0; transition: opacity .12s ease-out; }
+.ik-search.open input { opacity: 1; transition: opacity .25s ease-out .1s; }
+.ik-close { opacity: 0; pointer-events: none; }
+.ik-close.on { pointer-events: auto; }
+
+.ik-status { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 8px 0 6px; }
+.ik-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--ik-success)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--tone, var(--ik-success)) 25%, transparent); }
+.ik-status.pulse::before { animation: ik-pulse 2s ease-in-out infinite; }
+@keyframes ik-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in oklch, var(--tone, var(--ik-success)) 0%, transparent); } }
+
+.ik-avatars { display: flex; height: 32px; align-items: center; padding: 0 5px; }
+.ik-avatars span { width: 22px; height: 22px; border-radius: 50%; margin-left: -6px; box-shadow: 0 0 0 2px var(--ik-bar); display: grid; place-items: center;
+  font-size: 9px; font-weight: 700; color: #18181b; background: var(--c, #a1a1aa) center / cover no-repeat; }
+.ik-avatars span:first-child { margin-left: 0; }
+.ik-avatars span.more { background: var(--ik-tint-2); color: var(--ik-ink); }
+
+.ik-ring { width: 32px; height: 32px; border: 0; padding: 0; background: none; display: grid; place-items: center; font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ik-ring.clickable { cursor: pointer; }
+.ik-ring svg { width: 28px; height: 28px; transform: rotate(-90deg); grid-area: 1 / 1; }
+.ik-ring circle { stroke-width: 2.5; fill: none; stroke: var(--ik-track); }
+.ik-ring circle.arc { stroke: var(--ik-accent); transition: stroke-dashoffset .3s var(--ik-ease); }
+.ik-ring span { grid-area: 1 / 1; }
+
+/* ---------- panels: a sharp card over the goo blob that grows out of the bar ---------- */
+.ik-panel { position: absolute; left: 0; top: 0; background: var(--ik-bar); overflow: hidden; pointer-events: none; }
+.ik-panel.on { pointer-events: auto; }
+.ik-pc { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: max-content; padding: 10px; opacity: 0; filter: blur(6px); pointer-events: none; visibility: hidden;
+  transition: opacity .14s ease-out, filter .14s ease-out, visibility 0s .14s; }
+.ik-pc.on { opacity: 1; filter: none; pointer-events: auto; visibility: visible; transition: opacity .22s ease-out .08s, filter .22s ease-out .08s, visibility 0s; }
+.ik-ph { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: var(--ik-muted); padding: 2px 4px 10px; }
+.ik-rows { display: flex; flex-direction: column; gap: 2px; min-width: 180px; }
+.ik-row { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border: 0; border-radius: 9px; background: none; cursor: pointer; text-align: left; width: 100%; }
+.ik-row:hover, .ik-row:focus-visible, .ik-row.active { background: var(--ik-tint); outline: none; }
+.ik-row .ik-ic { width: 14px; height: 14px; opacity: .7; flex: none; }
+.ik-row .ik-rl { flex: 1; }
+.ik-row kbd, .ik-row .ik-hint { font: inherit; font-size: 11px; color: var(--ik-muted); margin-left: 14px; }
+.ik-row.danger { color: var(--ik-danger); }
+.ik-row[aria-disabled=true] { opacity: .35; pointer-events: none; }
+.ik-row .ik-check { width: 14px; height: 14px; flex: none; opacity: 0; }
+.ik-row[aria-checked=true] .ik-check { opacity: 1; }
+.ik-rsep { height: 1px; margin: 4px 6px; background: var(--ik-line); }
+.ik-tiles { display: grid; grid-template-columns: repeat(var(--cols, 3), 78px); gap: 6px; }
+.ik-tile { height: 62px; border: 0; border-radius: 12px; background: var(--ik-tint); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+  font-size: 12px; transition: background .2s ease-out, transform .15s ease-out; }
+.ik-tile:hover, .ik-tile:focus-visible { background: var(--ik-tint-2); }
+.ik-tile:active { transform: scale(.96); }
+.ik-tile .ik-ic { width: 16px; height: 16px; }
+.ik-swg { display: grid; grid-template-columns: repeat(var(--cols, 6), 26px); gap: 10px; padding: 0 4px 12px; }
+.ik-swg button { width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: var(--c); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08);
+  transition: box-shadow .2s ease-out, transform .15s ease-out; }
+.ik-swg button:active { transform: scale(.9); }
+.ik-swg button[aria-checked=true] { box-shadow: 0 0 0 2px var(--ik-bar), 0 0 0 3.5px var(--ik-ink); }
+.ik-prev { height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .3); }
+.ik-cmd { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 9px; background: var(--ik-tint); margin-bottom: 6px; }
+.ik-cmd .ik-ic { width: 14px; height: 14px; opacity: .6; }
+.ik-cmd input { width: 200px; }
+.ik-empty { padding: 10px; color: var(--ik-muted); font-size: 12px; text-align: center; }
+.ik-custom { display: block; }
+
+/* ---------- tooltip, collapse tab ---------- */
+.ik-tip { position: absolute; left: 0; top: 0; padding: 5px 8px; border-radius: 7px; background: var(--ik-bar); color: var(--ik-ink); font-size: 11px; white-space: nowrap;
+  box-shadow: 0 4px 14px var(--ik-shadow); pointer-events: none; opacity: 0; transition: opacity .15s ease-out; }
+.ik-tip.on { opacity: 1; }
+.ik-tab { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: 46px; height: 16px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; pointer-events: auto; opacity: 0;
+  transition: opacity .2s ease-out; }
+.ik-tab.on { opacity: 1; }
+.ik-tab svg { width: 12px; height: 12px; transition: transform .3s var(--ik-ease); }
+.ik[data-side=top] .ik-tab svg { rotate: 180deg; }
+.ik[data-side=left] .ik-tab svg { rotate: 90deg; }
+.ik[data-side=right] .ik-tab svg { rotate: -90deg; }
+.ik.ik-collapsed .ik-tab svg { transform: rotate(180deg); }
+.ik-items { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ik *, .ik *::before, .ik *::after { transition: none !important; animation: none !important; }
+}

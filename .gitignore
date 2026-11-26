@@ -1,0 +1,6 @@
+node_modules
+dist
+test/adapters/out
+test/shots
+*.log
+.DS_Store

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>islandkit demo</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; background: #2a2d33; color: #fff; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 40px 20px 180px; display: flex; flex-direction: column; gap: 34px; align-items: center; }
+  h1 { font-size: 15px; font-weight: 600; margin: 0; }
+  p.cap { margin: 0 0 10px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: rgb(255 255 255 / .55); text-align: center; }
+  section { width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .stage { position: relative; width: 100%; height: 420px; border-radius: 14px; background: rgb(255 255 255 / .04); overflow: hidden; }
+  #log { position: fixed; left: 12px; top: 12px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: rgb(255 255 255 / .55); pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="log">—</div>
+<main>
+  <h1>islandkit</h1>
+
+  <section><p class="cap">buttons: primary · icon · toggle · badge · pill · solid pill (drag to pull the bar; it bends and wobbles back)</p><div id="r1"></div></section>
+  <section><p class="cap">choice: segmented · switch · stepper</p><div id="r2"></div></section>
+  <section><p class="cap">range and pickers: slider · swatches · image thumbs</p><div id="r3"></div></section>
+  <section><p class="cap">input and menus: field · select · menu</p><div id="r4"></div></section>
+  <section><p class="cap">status: live dot · avatars · progress ring (click it)</p><div id="r5"></div></section>
+  <section><p class="cap">search: click the icon; the bar melts open and a close droplet pinches off</p><div id="r6"></div></section>
+  <section><p class="cap">contained: docked inside this box. Drag the bar and throw it at another edge</p><div class="stage" id="stage"></div></section>
+</main>
+<script src="../dist/vanilla/browser.global.js"></script>
+<script>
+  const { createIsland } = IslandKit;
+  const log = (...a) => { document.getElementById('log').textContent = a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '); };
+  const thumb = (a, b) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)"/></svg>`);
+  const inline = (id, items, extra = {}) => createIsland({ mode: 'inline', container: document.getElementById(id), items, onChange: (k, v) => log(k, '=', v), onAction: (k, e) => log('action', k, e ?? ''), ...extra });
+
+  window.islands = {};
+  islands.r1 = inline('r1', [
+    { type: 'button', id: 'add', label: 'Add', icon: 'plus', variant: 'primary' },
+    { type: 'button', id: 'undo', label: 'Undo', icon: 'undo' },
+    { type: 'button', id: 'redo', label: 'Redo', icon: 'redo' },
+    { type: 'button', id: 'grid', label: 'Grid', icon: 'grid', toggle: true },
+    { type: 'button', id: 'bell', label: 'Notifications', icon: 'bell', badge: 3 },
+    { type: 'separator' },
+    { type: 'pill', id: 'share', label: 'Share' },
+    { type: 'pill', id: 'publish', label: 'Publish', variant: 'solid' },
+  ]);
+  islands.r2 = inline('r2', [
+    { type: 'segmented', id: 'range', options: ['Day', 'Week', 'Month'], value: 'Week' },
+    { type: 'separator' },
+    { type: 'switch', id: 'snap', label: 'Snap', value: true },
+    { type: 'separator' },
+    { type: 'stepper', id: 'zoom', min: 25, max: 400, step: 25, value: 100, format: v => v + '%' },
+  ]);
+  islands.r3 = inline('r3', [
+    { type: 'slider', id: 'size', label: 'Size', min: 0, max: 100, value: 50 },
+    { type: 'separator' },
+    { type: 'swatches', id: 'swatch', options: ['#ef4444', '#f97316', '#22c55e', '#3b82f6', '#8b5cf6'] },
+    { type: 'separator' },
+    { type: 'thumbs', id: 'thumb', options: [thumb('#f97316', '#7c3aed'), thumb('#06b6d4', '#1e3a8a'), thumb('#facc15', '#be123c')] },
+  ]);
+  islands.r4 = inline('r4', [
+    { type: 'field', id: 'name', placeholder: 'Search', width: 150 },
+    { type: 'select', id: 'fit', label: 'Fit', options: ['Fill', 'Fit', 'Stretch'], value: 'Fill' },
+    { type: 'separator' },
+    { type: 'menu', id: 'more', label: 'More', icon: 'more', items: [
+      { label: 'Duplicate', icon: 'copy', shortcut: '⌘D' },
+      { label: 'Rename', icon: 'pen', shortcut: '⏎' },
+      'separator',
+      { label: 'Delete', icon: 'trash', shortcut: '⌫', danger: true },
+    ] },
+  ]);
+  islands.r5 = inline('r5', [
+    { type: 'status', label: 'Live' },
+    { type: 'separator' },
+    { type: 'avatars', people: [{ name: 'Matteo A' }, { name: 'Jane Lee' }, { name: 'Ada K' }, { name: 'Bo R' }, { name: 'Cy D' }] },
+    { type: 'separator' },
+    { type: 'button', label: 'Notifications', icon: 'bell', badge: true },
+    { type: 'progress', id: 'upload', label: 'Upload', value: 0, onClick: () => run() },
+  ]);
+  function run() { const t0 = performance.now(); (function step(now) { const f = Math.min(1, (now - t0) / 2000); islands.r5.set('upload', f); if (f < 1) requestAnimationFrame(step); })(t0); }
+  islands.r6 = inline('r6', [
+    { type: 'button', label: 'Add', icon: 'plus', variant: 'primary' },
+    { type: 'button', label: 'Undo', icon: 'undo' },
+    { type: 'button', label: 'Redo', icon: 'redo' },
+    { type: 'button', label: 'Grid', icon: 'grid' },
+    { type: 'separator' },
+    { type: 'search', id: 'q', placeholder: 'Search' },
+  ]);
+
+  islands.stage = createIsland({
+    mode: 'contained', container: document.getElementById('stage'), side: 'left',
+    items: [
+      { type: 'button', label: 'Add', icon: 'plus', variant: 'primary' },
+      { type: 'button', label: 'Undo', icon: 'undo' },
+      { type: 'button', label: 'Redo', icon: 'redo' },
+      { type: 'separator' },
+      { type: 'button', label: 'Search', icon: 'search' },
+      { type: 'button', label: 'More', icon: 'more' },
+    ],
+    onSideChange: s => log('side', s),
+  });
+
+  // the app dock: fixed to the viewport, collapsible, with panels
+  islands.dock = createIsland({
+    side: 'bottom', collapsible: true, label: 'Canvas tools',
+    onChange: (k, v) => log(k, '=', v), onAction: (k, e) => log('action', k, e ?? ''), onSideChange: s => log('side', s),
+    items: [
+      { type: 'grid', id: 'insert', label: 'Insert', icon: 'plus', items: [
+        { label: 'Text', icon: 'text' }, { label: 'Image', icon: 'image' }, { label: 'Shape', icon: 'shape' },
+        { label: 'Frame', icon: 'frame' }, { label: 'Sticky', icon: 'sticky' }, { label: 'Embed', icon: 'embed' },
+      ] },
+      { type: 'color', id: 'fill', label: 'Fill', icon: 'palette' },
+      { type: 'command', id: 'find', label: 'Search', icon: 'search', placeholder: 'Search layers', items: [
+        { label: 'Header', icon: 'frame', hint: 'Frame' }, { label: 'Table', icon: 'grid', hint: 'Frame' },
+        { label: 'Footer', icon: 'frame', hint: 'Frame' }, { label: 'Colours', icon: 'palette', hint: 'Style' },
+      ] },
+      { type: 'separator' },
+      { type: 'button', id: 'comments', label: 'Comments', icon: 'comment' },
+      { type: 'button', id: 'invite', label: 'Invite', icon: 'invite' },
+      { type: 'button', id: 'theme', label: 'Light theme', icon: 'sun', toggle: true, onChange: light => {
+        for (const k in islands) islands[k].update({ theme: light ? 'light' : 'dark' });
+        document.documentElement.style.background = document.body.style.background = light ? '#e9eaee' : '#2a2d33'; document.body.style.color = light ? '#111' : '#fff'; document.documentElement.style.colorScheme = light ? 'light' : 'dark';
+      } },
+      { type: 'separator' },
+      { type: 'menu', id: 'view', label: 'View', trigger: 'pill', items: [
+        { label: 'Zoom in', icon: 'zoomIn', shortcut: '⌘+' }, { label: 'Zoom out', icon: 'zoomOut', shortcut: '⌘−' },
+        'separator', { label: 'Show grid', checked: true }, { label: 'Snap to pixels', checked: false },
+      ] },
+    ],
+  });
+</script>
+</body>
+</html>
